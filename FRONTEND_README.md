@@ -22,3 +22,7 @@ git push -u origin feat/premium-frontend
 Notas:
 - El login local es un placeholder que guarda el usuario en `localStorage`. En producción reemplazar por Keycloak (ya preparado en `src/app/core/keycloak.config.ts`).
 - La matrícula se guarda temporalmente en `localStorage` y la confirmación permite descargar un comprobante JSON. Reemplazar con llamadas al backend cuando esté disponible.
+
+AVISO IMPORTANTE (PRUEBA - VERSIÓN INICIAL):
+Esta rama y los cambios incluidos son una prueba del frontend y constituyen la versión inicial del mismo. Se encuentran sujetos a cambios, revisiones y mejoras posteriores. No deben considerarse definitivos ni en producción hasta que se realicen las integraciones y revisiones correspondientes.
+
