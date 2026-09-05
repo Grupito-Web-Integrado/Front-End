@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+:root{
+	--bg1:#071126;
+	--bg2:#07111a;
+	--accent:#7c3aed;
+	--muted:#9fb0c8;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',system-ui,Arial,sans-serif;margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf2ff}
+a{color:inherit}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.02);background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent)}
+.brand{display:flex;flex-direction:column}
+.brand h1{margin:0;font-size:18px}
+.brand .tag{font-size:12px;color:var(--muted)}
+.nav-links a{margin-left:12px;color:var(--muted);text-decoration:none}
+

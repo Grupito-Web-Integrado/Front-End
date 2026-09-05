@@ -1,0 +1,6 @@
+.matricula-page{display:flex;justify-content:center;padding:36px;background:linear-gradient(180deg,#071126,#07111a)}
+.matricula-page .card{width:720px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:22px;border-radius:12px;color:#eaf2ff;border:1px solid rgba(255,255,255,0.04)}
+label{display:block;margin-top:12px;color:#9fb0c8}
+input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#f8fafc;margin-top:6px}
+.actions{display:flex;justify-content:flex-end;margin-top:14px}
+button{background:linear-gradient(90deg,#7c3aed,#4f46e5);border:none;padding:10px 16px;border-radius:10px;color:white;cursor:pointer}

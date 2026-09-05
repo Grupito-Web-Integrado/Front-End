@@ -1,0 +1,24 @@
+<div class="matricula-page">
+	<div class="card">
+		<h2>Formulario de Matrícula</h2>
+		<p class="muted">Completa los datos para reservar tu cupo</p>
+
+		<form #f="ngForm" (ngSubmit)="onSubmit(f.value)">
+			<label>Nombre completo</label>
+			<input name="nombre" ngModel required />
+
+			<label>Correo electrónico</label>
+			<input name="email" type="email" ngModel required />
+
+			<label>Teléfono</label>
+			<input name="telefono" ngModel />
+
+			<label>Datos adicionales (necesarios para matrícula)</label>
+			<textarea name="datos" ngModel rows="3"></textarea>
+
+			<div class="actions">
+				<button type="submit">Registrar Matrícula</button>
+			</div>
+		</form>
+	</div>
+</div>
