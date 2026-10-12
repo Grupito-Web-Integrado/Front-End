@@ -11,12 +11,12 @@ import { CommonModule } from '@angular/common';
 export class App {
   protected readonly title = signal('frontend-plataforma-cursos');
   protected readonly user = signal<{ username?: string } | null>(null);
-
-  constructor(private router: Router) {
+constructor(private router: Router) {
+  if (typeof window !== 'undefined' && window.localStorage) {
     const raw = localStorage.getItem('user');
     if (raw) this.user.set(JSON.parse(raw));
   }
-
+}
   logout() {
     localStorage.removeItem('user');
     this.user.set(null);
