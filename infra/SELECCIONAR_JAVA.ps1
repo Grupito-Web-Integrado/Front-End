@@ -2,10 +2,10 @@
 # Prefiere JDK 21. Si solo hay JDK >= 21 (por ejemplo Java 24), lo permite
 # sin tocar JAVA_HOME ni el PATH global del usuario.
 $javaCandidates = New-Object 'System.Collections.Generic.List[string]'
-$homes = @($env:JDK21_HOME, $env:JAVA21_HOME, $env:JAVA_HOME)
-foreach($home in $homes) {
-  if(-not [string]::IsNullOrWhiteSpace($home)) {
-    $javaCandidates.Add((Join-Path $home 'bin\java.exe'))
+$jdkHomes = @($env:JDK21_HOME, $env:JAVA21_HOME, $env:JAVA_HOME)
+foreach($jdkHome in $jdkHomes) {
+  if(-not [string]::IsNullOrWhiteSpace($jdkHome)) {
+    $javaCandidates.Add((Join-Path $jdkHome 'bin\java.exe'))
   }
 }
 $roots = @(
@@ -29,8 +29,8 @@ if($active -and $active.Source) {
 $found = $null
 foreach($exe in @($javaCandidates | Select-Object -Unique)) {
   if(-not(Test-Path -LiteralPath $exe)) {continue}
-  $home = Split-Path (Split-Path $exe -Parent) -Parent
-  $compiler = Join-Path $home 'bin\javac.exe'
+  $jdkHome = Split-Path (Split-Path $exe -Parent) -Parent
+  $compiler = Join-Path $jdkHome 'bin\javac.exe'
   if(-not(Test-Path $compiler)) {continue}
   try {
     $out = (& $exe --version 2>&1 | Out-String)
@@ -39,10 +39,10 @@ foreach($exe in @($javaCandidates | Select-Object -Unique)) {
     $major = [int]$matches[1]
     if($major -lt 21) {continue}
     if($major -eq 21) {
-      $found = @{Home=$home;Version=$major;Java=$exe}
+      $found = @{Home=$jdkHome;Version=$major;Java=$exe}
       break
     }
-    if(-not $found) { $found = @{Home=$home;Version=$major;Java=$exe} }
+    if(-not $found) { $found = @{Home=$jdkHome;Version=$major;Java=$exe} }
   } catch {
     continue
   }
