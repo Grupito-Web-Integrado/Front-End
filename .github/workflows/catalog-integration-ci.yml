@@ -16,9 +16,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
-          cache-dependency-path: |
-            **/pom.xml
       - name: Clonar repositorios de los servicios
         run: |
           git clone --depth 1 https://github.com/Grupito-Web-Integrado/Catalogo-Cursos-Publico-1A.git ./tmp-catalogo
