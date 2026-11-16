@@ -5,6 +5,7 @@
       <a routerLink="/inicio" routerLinkActive="active">Inicio</a>
       <a routerLink="/catalogo" routerLinkActive="active">Cursos</a>
       <a routerLink="/mis-matriculas" routerLinkActive="active">Mis matrículas</a>
+      @if(puedeAdministrar()){
       <a routerLink="/pagos" routerLinkActive="active">Pagos</a>
       <div class="nav-dropdown"><span>Gestión ▾</span>
         <div class="nav-dropdown-items">
@@ -14,6 +15,7 @@
           <a routerLink="/gestion/integraciones">Conexiones API</a>
         </div>
       </div>
+      }
     </nav>
     <div class="header-actions"><a class="api-chip" routerLink="/gestion/integraciones">{{ demo.modo()==='demo' ? '◉ DEMO' : '● API' }}</a>@if(auth.autenticado()){
       <a class="nav-cta" routerLink="/login">{{ auth.usuario() || 'Mi cuenta' }} <span>✓</span></a>

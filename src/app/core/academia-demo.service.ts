@@ -7,6 +7,7 @@ import { Categoria, Curso, Matricula, Pago } from './academia.models';
 export class AcademiaDemoService {
   private platformId = inject(PLATFORM_ID);
   readonly modo = signal<'demo' | 'api'>('demo');
+  readonly perfilDemo = signal<'estudiante' | 'administrador'>('estudiante');
   readonly cursos = signal<Curso[]>([...CURSOS_DEMO]);
   readonly categorias = signal<Categoria[]>([...CATEGORIAS_DEMO]);
   readonly matriculas = signal<Matricula[]>([]);
@@ -15,6 +16,7 @@ export class AcademiaDemoService {
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.modo.set(localStorage.getItem('myacademy-modo') === 'api' ? 'api' : 'demo');
+    this.perfilDemo.set(localStorage.getItem('myacademy-perfil-demo')==='administrador'?'administrador':'estudiante');
     const anteriores = this.leer<Curso[]>('myacademy-cursos', []);
     // Mantener altas/ediciones del usuario sin perder los nuevos cursos demo.
     const porId = new Map<string, Curso>();
@@ -47,6 +49,10 @@ export class AcademiaDemoService {
   establecerModo(modo: 'demo' | 'api'): void {
     this.modo.set(modo);
     this.guardar('myacademy-modo', modo);
+  }
+  establecerPerfilDemo(perfil:'estudiante'|'administrador'):void {
+    this.perfilDemo.set(perfil);
+    this.guardar('myacademy-perfil-demo', perfil);
   }
   registrarCurso(data: Curso): void {
     const arr = [...this.cursos(), data];

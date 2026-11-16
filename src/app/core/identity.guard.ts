@@ -7,7 +7,11 @@ import { AuthService } from './auth.service';
  *  Los controles del navegador NO sustituyen la verificación JWT en el backend. */
 export const protegerApi: CanActivateFn = async (route, state) => {
   const demo = inject(AcademiaDemoService);
-  if (demo.modo() === 'demo') return true;
+  if (demo.modo() === 'demo') {
+    const rol=route.data['rol'] as string | undefined;
+    if(rol==='ADMIN' && demo.perfilDemo()!=='administrador') return inject(Router).createUrlTree(['/acceso-denegado']);
+    return true;
+  }
 
   const auth = inject(AuthService);
   const router = inject(Router);

@@ -199,11 +199,17 @@ export class CatalogoAvanzado implements OnInit {
     ).subscribe(v=>this.sugerencias.set(v));
     if(this.vista==='detalle'){
       const id=this.route.snapshot.paramMap.get('id')||'';
-      if(this.demo.modo()==='demo') this.detalle.set(this.demo.cursos().find(c=>c.id===id)||null);
+      if(this.demo.modo()==='demo') {
+        const curso=this.demo.cursos().find(c=>c.id===id && c.status==='PUBLISHED')||null;
+        this.detalle.set(curso);
+        if(!curso)this.error.set('El curso no está disponible para estudiantes.');
+        this.horarios.set(curso?.schedules||[]);
+        this.sedes.set(curso?.locations||[]);
+      }
       else {
         this.cargando.set(true);
         this.api.curso(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-          next: c=>{this.detalle.set(c);this.cargando.set(false);},
+          next: c=>{this.detalle.set(c.status==='PUBLISHED'?c:null);if(c.status!=='PUBLISHED')this.error.set('El curso no está publicado.');this.cargando.set(false);},
           error: ()=>{this.error.set('No fue posible cargar el curso desde el backend.');this.cargando.set(false);}
         });
         this.api.horarios(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:p=>this.horarios.set(p.content),error:()=>{}});

@@ -12,6 +12,17 @@
       <p class="mode-note">Estado de identidad: {{ auth.estado() }}. {{ auth.error() }}</p>
       <div class="button-row"><button class="btn-primary" (click)="iniciar()">Acceder con Keycloak ↗</button><a class="btn-outline" routerLink="/catalogo">Ver cursos</a></div>
     }
+    @if(demo.modo()==='demo'){
+      <div class="form-card">
+        <h2>Perfiles para validar las pantallas</h2>
+        <p>Son vistas de demostración; no sustituyen la autenticación real con Keycloak.</p>
+        <div class="button-row">
+          <button class="btn-outline" [class.active]="demo.perfilDemo()==='estudiante'" (click)="seleccionarPerfilDemo('estudiante')">Vista estudiante</button>
+          <button class="btn-outline" [class.active]="demo.perfilDemo()==='administrador'" (click)="seleccionarPerfilDemo('administrador')">Vista administrador</button>
+        </div>
+        @if(demo.perfilDemo()==='administrador'){<a class="btn-primary" routerLink="/gestion/cursos">Entrar a gestionar cursos</a>}
+      </div>
+    }
     @if(mensaje()){<p class="error-banner" role="alert">{{ mensaje() }}</p>}
     @if(demo.modo()==='demo'){<p class="mode-note">Modo demostración activo. Las matrículas demo no se envían a los microservicios.</p>}
   </div>

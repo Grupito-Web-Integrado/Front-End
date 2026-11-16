@@ -16,6 +16,10 @@ export class Login {
   private readonly route = inject(ActivatedRoute);
   readonly denied = this.route.snapshot.data['denied'] === true;
   readonly mensaje = signal('');
+  seleccionarPerfilDemo(perfil:'estudiante'|'administrador'):void {
+    this.demo.establecerPerfilDemo(perfil);
+    this.mensaje.set('Perfil de demostración activado: '+perfil+'. No concede permisos reales.');
+  }
 
   async iniciar(): Promise<void> {
     this.mensaje.set('');
