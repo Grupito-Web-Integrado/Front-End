@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Curso } from '../../core/academia.models';
-import { CATEGORIAS_DEMO } from '../../core/demo-catalog';
+import { portadaCurso } from '../../core/course-cover';
 
 @Component({
   selector: 'app-curso-card',
@@ -34,18 +34,10 @@ import { CATEGORIAS_DEMO } from '../../core/demo-catalog';
 export class CursoCard {
   @Input({ required: true }) curso!: Curso;
   @Input() categoria = 'Formación tecnológica';
-  imagen(): string {
-    const url = this.curso.imageUrl;
-    if (url && (url.startsWith('/course-covers/') || /^https:\/\//.test(url))) return url;
-    const categoryId = this.curso.categoryId || this.curso.categories?.[0]?.id;
-    const index = CATEGORIAS_DEMO.findIndex(c=>c.id===categoryId);
-    // Ilustración por categoría o índice estable cuando la API no incluye imagen.
-    const area = index>=0 ? index : this.curso.name.length % 11;
-    return '/course-covers/area-'+area+'.svg';
-  }
-  imagenError(event: Event): void {
-    const image = event.target as HTMLImageElement;
-    if (!image.src.endsWith('area-0.svg')) image.src='/course-covers/area-0.svg';
+  imagen():string{return portadaCurso(this.curso);}
+  imagenError(event: Event):void{
+    const el=event.target as HTMLImageElement;
+    if (!el.src.endsWith('area-0.svg')) el.src='/course-covers/area-0.svg';
   }
   paleta(): number { return (this.curso.name.length + this.curso.code.length) % 6; }
   modalidad(): string {

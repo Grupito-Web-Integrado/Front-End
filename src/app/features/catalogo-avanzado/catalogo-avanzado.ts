@@ -8,6 +8,7 @@ import { AcademiaApiService } from '../../core/academia-api.service';
 import { AcademiaDemoService } from '../../core/academia-demo.service';
 import { Categoria, Curso, Horario, Sede, Sugerencia } from '../../core/academia.models';
 import { CursoCard } from '../curso-card/curso-card';
+import { portadaCurso } from '../../core/course-cover';
 
 @Component({
   selector: 'app-catalogo-avanzado',
@@ -139,7 +140,7 @@ import { CursoCard } from '../curso-card/curso-card';
               @if (sedes().length===0) { <p>Consulta la modalidad del curso para conocer los detalles de asistencia.</p> }
             </section>
           </div>
-          <aside class="detail-buy"><div class="detail-visual"><img [src]="curso.imageUrl || '/course-covers/area-0.svg'" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>Inscripción de prueba mientras no exista API de matrículas.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
+          <aside class="detail-buy"><div class="detail-visual"><img [src]="portadaCurso(curso)" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>Inscripción de prueba mientras no exista API de matrículas.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
         </div>
       }
     </section>
@@ -148,6 +149,7 @@ import { CursoCard } from '../curso-card/curso-card';
 })
 export class CatalogoAvanzado implements OnInit {
   readonly demo = inject(AcademiaDemoService);
+  readonly portadaCurso=portadaCurso;
   private api = inject(AcademiaApiService);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);

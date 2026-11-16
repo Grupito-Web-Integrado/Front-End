@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AcademiaApiService } from '../../core/academia-api.service';
 import { AcademiaDemoService } from '../../core/academia-demo.service';
 import { Categoria, Curso, Horario, Sede } from '../../core/academia.models';
+import { portadaCurso } from '../../core/course-cover';
 
 @Component({
   selector: 'app-curso-admin',
@@ -89,7 +90,7 @@ import { Categoria, Curso, Horario, Sede } from '../../core/academia.models';
         <aside class="editor-sidebar">
           <div class="form-card">
             <h2>Imagen de portada</h2>
-            <img class="editor-cover" [src]="edicion.imageUrl || '/course-covers/area-0.svg'" [alt]="'Portada de '+c.name">
+            <img class="editor-cover" [src]="edicion.imageUrl || portadaCurso(c)" [alt]="'Portada de '+c.name">
             <label class="form-field"><span>URL de imagen (solo demostración)</span>
               <input name="imageUrl" [(ngModel)]="edicion.imageUrl" [disabled]="demo.modo()==='api'" placeholder="/course-covers/area-0.svg">
             </label>
@@ -123,6 +124,7 @@ import { Categoria, Curso, Horario, Sede } from '../../core/academia.models';
 })
 export class CursoAdmin implements OnInit {
   readonly demo=inject(AcademiaDemoService);
+  readonly portadaCurso=portadaCurso;
   private readonly api=inject(AcademiaApiService);
   private readonly route=inject(ActivatedRoute);
   private readonly destroyRef=inject(DestroyRef);

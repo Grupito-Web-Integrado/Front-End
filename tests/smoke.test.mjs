@@ -71,3 +71,26 @@ test('La infraestructura y realm incluyen las bases y Keycloak', () => {
   assert.equal(realm.realm,'myacademy');
   assert.ok(realm.roles.realm.some(r=>r.name==='ADMIN'));
 });
+
+test('Estados y modalidades del curso coinciden con enums del backend', () => {
+  const model=read('src/app/core/academia.models.ts');
+  for(const status of ['DRAFT','PUBLISHED','CANCELLED','COMPLETED']) assert.ok(model.includes("'"+status+"'"));
+  assert.equal(model.includes("'IN_PROGRESS'"),false);
+  assert.ok(model.includes("'IN_PERSON'"));
+  assert.equal(model.includes("'PRESENTIAL'"),false);
+});
+
+test('La portada presenta seis categorías dinámicas con opción de expansión', () => {
+  const catalog=read('src/app/features/catalogo-avanzado/catalogo-avanzado.ts');
+  assert.ok(catalog.includes('this.categorias().slice(0,6)'));
+  assert.ok(catalog.includes('this.api.categoriasActivasCompletas()'));
+  assert.ok(catalog.includes('mostrarTodasCategorias'));
+});
+
+test('El editor del curso integra horarios y sedes, separado del público', () => {
+  const editor=read('src/app/features/curso-admin/curso-admin.ts');
+  assert.ok(editor.includes('guardarHorario()'));
+  assert.ok(editor.includes('guardarSede()'));
+  const routes=read('src/app/app.routes.ts');
+  assert.ok(routes.includes("path: 'gestion/cursos/:id'"));
+});
