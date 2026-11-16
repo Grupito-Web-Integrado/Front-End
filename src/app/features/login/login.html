@@ -1,22 +1,14 @@
-<div class="page-login">
-  <div class="panel">
-    <div class="brand">
-      <h1>MyAcademy</h1>
-      <p class="tag">Premium learning platform</p>
-    </div>
-
-    <form (submit)="submit($event)">
-      <label>Usuario</label>
-      <input type="text" [(ngModel)]="username" name="username" placeholder="tu.usuario" />
-
-      <label>Contraseña</label>
-      <input type="password" [(ngModel)]="password" name="password" placeholder="********" />
-
-      <div class="actions">
-        <button type="submit">Entrar</button>
-      </div>
-
-      <p class="muted">Inicia sesión con Keycloak en producción. Este es un login local de ejemplo.</p>
-    </form>
+<section class="shell access-page">
+  <div class="access-panel">
+    <span class="section-overline">MI CUENTA · MYACADEMY</span>
+    <h1>Un espacio para seguir aprendiendo</h1>
+    @if(demo.modo()==='demo'){
+      <p>Estás en un entorno académico de demostración. Puedes explorar los cursos y probar los formularios, sin crear una cuenta.</p>
+      <div class="button-row"><a class="btn-primary" routerLink="/catalogo">Explorar cursos</a><a class="btn-outline" routerLink="/mis-matriculas">Ver mis matrículas de prueba</a></div>
+      <p class="mode-note">Este modo no tiene autenticación. No introduzcas contraseñas ni datos personales reales.</p>
+    } @else {
+      <p>El ingreso con Keycloak todavía no está configurado. Necesitamos el realm, client ID, URL del servidor y roles definidos por el equipo.</p>
+      <a class="btn-outline" routerLink="/gestion/integraciones">Ver configuración de servicios</a>
+    }
   </div>
-</div>
+</section>

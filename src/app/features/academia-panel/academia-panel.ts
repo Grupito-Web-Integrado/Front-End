@@ -104,9 +104,22 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
             <label class="form-field"><span>Hasta</span><input type="time" name="to" [(ngModel)]="nuevoHorario.endTime"></label>
           </div><button class="btn-primary" (click)="crearHorario()">Crear horario</button>
           <div class="table-scroll"><table><thead><tr><th>Día</th><th>Inicio</th><th>Fin</th><th>Aula</th><th>Edición</th></tr></thead><tbody>
-          @for(h of horarios();track h.id){<tr><td>{{h.dayOfWeek}}</td><td>{{h.startTime}}</td><td>{{h.endTime}}</td><td>{{h.room||'—'}}</td><td><button class="table-link" (click)="editarRegistroHorario(h)">Editar sala</button></td></tr>}
+          @for(h of horarios();track h.id){<tr><td>{{h.dayOfWeek}}</td><td>{{h.startTime}}</td><td>{{h.endTime}}</td><td>{{h.room||'—'}}</td><td><button class="table-link" (click)="editarRegistroHorario(h)">Editar</button></td></tr>}
           @if(horarios().length===0){<tr><td colspan="5" class="table-empty">Sin horarios para el curso seleccionado.</td></tr>}
           </tbody></table></div>
+          @if (horarioEditando(); as h) {
+            <div class="form-card editor-inline">
+              <h3>Editar horario de {{ h.courseId }}</h3>
+              <div class="form-grid">
+                <label class="form-field"><span>Día</span><select [(ngModel)]="edicionHorario.dayOfWeek" name="editDay">@for(d of dias;track d){<option [value]="d">{{d}}</option>}</select></label>
+                <label class="form-field"><span>Aula</span><input [(ngModel)]="edicionHorario.room" name="editRoom"></label>
+                <label class="form-field"><span>Hora de inicio</span><input type="time" [(ngModel)]="edicionHorario.startTime" name="editStart"></label>
+                <label class="form-field"><span>Hora de fin</span><input type="time" [(ngModel)]="edicionHorario.endTime" name="editEnd"></label>
+              </div>
+              <button class="btn-primary" (click)="guardarHorario()">Guardar horario</button>
+              <button class="btn-outline" (click)="horarioEditando.set(null)">Cancelar</button>
+            </div>
+          }
         } @else {
           <div class="form-grid">
             <label class="form-field"><span>Nombre de la sede</span><input name="sedeName" [(ngModel)]="nuevaSede.name"></label>
@@ -116,9 +129,23 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
             <label class="form-field"><span>Capacidad</span><input type="number" name="sedeCapacity" [(ngModel)]="nuevaSede.capacity"></label>
           </div><button class="btn-primary" (click)="crearSede()">Crear sede</button>
           <div class="table-scroll"><table><thead><tr><th>Sede</th><th>Ciudad</th><th>Dirección</th><th>Capacidad</th><th>Edición</th></tr></thead><tbody>
-          @for(s of sedes();track s.id){<tr><td>{{s.name}}</td><td>{{s.city||'—'}}</td><td>{{s.address||'—'}}</td><td>{{s.capacity??'—'}}</td><td><button class="table-link" (click)="editarRegistroSede(s)">Editar nombre</button></td></tr>}
+          @for(s of sedes();track s.id){<tr><td>{{s.name}}</td><td>{{s.city||'—'}}</td><td>{{s.address||'—'}}</td><td>{{s.capacity??'—'}}</td><td><button class="table-link" (click)="editarRegistroSede(s)">Editar</button></td></tr>}
           @if(sedes().length===0){<tr><td colspan="5" class="table-empty">Sin sedes para el curso seleccionado.</td></tr>}
           </tbody></table></div>
+          @if (sedeEditando(); as s) {
+            <div class="form-card editor-inline">
+              <h3>Editar sede: {{ s.name }}</h3>
+              <div class="form-grid">
+                <label class="form-field"><span>Nombre</span><input name="editSedeName" [(ngModel)]="edicionSede.name"></label>
+                <label class="form-field"><span>Ciudad</span><input name="editSedeCity" [(ngModel)]="edicionSede.city"></label>
+                <label class="form-field"><span>Dirección</span><input name="editSedeAddress" [(ngModel)]="edicionSede.address"></label>
+                <label class="form-field"><span>Referencia</span><input name="editSedeReference" [(ngModel)]="edicionSede.reference"></label>
+                <label class="form-field"><span>Capacidad</span><input type="number" name="editSedeCapacity" [(ngModel)]="edicionSede.capacity"></label>
+              </div>
+              <button class="btn-primary" (click)="guardarSede()">Guardar sede</button>
+              <button class="btn-outline" (click)="sedeEditando.set(null)">Cancelar</button>
+            </div>
+          }
         }
       </div>
     }
@@ -156,6 +183,10 @@ export class AcademiaPanel implements OnInit {
   nuevaCategoria={name:'',description:''};
   nuevoHorario={dayOfWeek:'MONDAY',startTime:'09:00',endTime:'11:00',room:''};
   nuevaSede={name:'',address:'',city:'',reference:'',capacity:30};
+  readonly horarioEditando=signal<Horario|null>(null);
+  readonly sedeEditando=signal<Sede|null>(null);
+  edicionHorario={dayOfWeek:'MONDAY',startTime:'09:00',endTime:'11:00',room:''};
+  edicionSede={name:'',address:'',city:'',reference:'',capacity:30};
   editarNombre='';editarDescripcion='';editarPrecio=0;
   cursosVisibles():Curso[]{return this.demo.modo()==='demo'?this.demo.cursos():this.cursosApi();}
   categoriasVisibles():Categoria[]{return this.demo.modo()==='demo'?this.demo.categorias():this.categoriasApi();}
@@ -311,17 +342,55 @@ export class AcademiaPanel implements OnInit {
     }
     this.api.crearSede({courseId:id,...s}).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:()=>{this.ok('Sede creada.');this.seleccionarCursoReferencia(id);},error:e=>this.fallo(e)});
   }
-  editarRegistroHorario(h:Horario):void{
-    if(!isPlatformBrowser(this.platformId))return;
-    const room=window.prompt('Nueva sala/aula',h.room||'');if(room===null)return;
-    if(this.demo.modo()==='demo'){this.horarios.update(x=>x.map(z=>z.id===h.id?{...z,room}:z));this.ok('Sala demo actualizada.');return;}
-    this.api.editarHorario(h.id,'room',room).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:()=>{this.ok('Sala actualizada.');this.seleccionarCursoReferencia(h.courseId);},error:e=>this.fallo(e)});
+  editarRegistroHorario(h:Horario):void {
+    this.horarioEditando.set(h);
+    this.edicionHorario={dayOfWeek:h.dayOfWeek,startTime:h.startTime.substring(0,5),
+      endTime:h.endTime.substring(0,5),room:h.room||''};
   }
-  editarRegistroSede(s:Sede):void{
-    if(!isPlatformBrowser(this.platformId))return;
-    const name=window.prompt('Nuevo nombre de sede',s.name);if(!name)return;
-    if(this.demo.modo()==='demo'){this.sedes.update(x=>x.map(z=>z.id===s.id?{...z,name}:z));this.ok('Sede demo actualizada.');return;}
-    this.api.editarSede(s.id,'name',name).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:()=>{this.ok('Nombre actualizado.');this.seleccionarCursoReferencia(s.courseId);},error:e=>this.fallo(e)});
+  guardarHorario():void {
+    const h=this.horarioEditando(),e=this.edicionHorario;
+    if(!h)return;
+    if(e.endTime<=e.startTime){this.error.set('La hora de fin debe ser posterior al inicio.');return;}
+    if(this.demo.modo()==='demo'){
+      this.horarios.update(items=>items.map(x=>x.id===h.id?{...x,...e}:x));
+      this.ok('Horario demo actualizado durante esta sesión.');this.horarioEditando.set(null);return;
+    }
+    const reqs=[
+      ...(h.dayOfWeek!==e.dayOfWeek?[this.api.editarHorario(h.id,'day',e.dayOfWeek)]:[]),
+      ...(h.startTime.substring(0,5)!==e.startTime?[this.api.editarHorario(h.id,'start-time',e.startTime)]:[]),
+      ...(h.endTime.substring(0,5)!==e.endTime?[this.api.editarHorario(h.id,'end-time',e.endTime)]:[]),
+      ...((h.room||'')!==e.room?[this.api.editarHorario(h.id,'room',e.room)]:[])
+    ];
+    if(!reqs.length){this.ok('No hay cambios.');return;}
+    from(reqs).pipe(concatMap(req=>req),toArray(),takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:()=>{this.ok('Horario actualizado.');this.horarioEditando.set(null);this.seleccionarCursoReferencia(h.courseId);},
+      error:err=>this.fallo(err)
+    });
+  }
+  editarRegistroSede(s:Sede):void {
+    this.sedeEditando.set(s);
+    this.edicionSede={name:s.name,address:s.address||'',city:s.city||'',
+      reference:s.reference||'',capacity:s.capacity??0};
+  }
+  guardarSede():void {
+    const s=this.sedeEditando(),e=this.edicionSede;if(!s)return;
+    if(!e.name.trim()||e.capacity<0){this.error.set('El nombre es obligatorio y la capacidad no puede ser negativa.');return;}
+    if(this.demo.modo()==='demo'){
+      this.sedes.update(items=>items.map(x=>x.id===s.id?{...x,...e}:x));
+      this.ok('Sede demo actualizada durante esta sesión.');this.sedeEditando.set(null);return;
+    }
+    const reqs=[
+      ...(s.name!==e.name?[this.api.editarSede(s.id,'name',e.name)]:[]),
+      ...((s.address||'')!==e.address?[this.api.editarSede(s.id,'address',e.address)]:[]),
+      ...((s.city||'')!==e.city?[this.api.editarSede(s.id,'city',e.city)]:[]),
+      ...((s.reference||'')!==e.reference?[this.api.editarSede(s.id,'reference',e.reference)]:[]),
+      ...((s.capacity??0)!==e.capacity?[this.api.editarSede(s.id,'capacity',e.capacity)]:[])
+    ];
+    if(!reqs.length){this.ok('No hay cambios.');return;}
+    from(reqs).pipe(concatMap(req=>req),toArray(),takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:()=>{this.ok('Sede actualizada.');this.sedeEditando.set(null);this.seleccionarCursoReferencia(s.courseId);},
+      error:err=>this.fallo(err)
+    });
   }
   cambiarModo(modo:'demo'|'api'):void{this.demo.establecerModo(modo);this.ok('Modo '+modo.toUpperCase()+' seleccionado. Se aplicará al navegar a otras vistas.');}
   diagnosticar():void{
