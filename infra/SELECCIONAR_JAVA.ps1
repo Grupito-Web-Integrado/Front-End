@@ -36,10 +36,11 @@ foreach($candidate in @($javaCandidates | Select-Object -Unique)){
   if(-not((Test-Path -LiteralPath $javaExe -PathType Leaf) -and
           (Test-Path -LiteralPath $compiler -PathType Leaf))){continue}
   try {
-    $info = (& $javaExe -version 2>&1 | Out-String)
+    $info = (& $javaExe --version 2>&1 | Out-String)
     if($LASTEXITCODE -ne 0){continue}
-    if($info -notmatch '(?im)(?:java|openjdk)\s+(?:version\s+)?"?([0-9]+)'){continue}
-    $major = [int]$matches[1]
+    $parsed = [regex]::Match($info, '(?im)(?:java|openjdk)\s+(?:version\s+)?"?([0-9]+)')
+    if(-not $parsed.Success){continue}
+    $major = [int]$parsed.Groups[1].Value
     if($major -lt 21){continue}
     $javacInfo = (& $compiler -version 2>&1 | Out-String)
     if($LASTEXITCODE -ne 0 -or $javacInfo -notmatch ('(?i)javac\s+'+$major+'(?:\.|\s|$)')){continue}
