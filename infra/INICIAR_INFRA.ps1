@@ -53,6 +53,9 @@ if($ConObservabilidad){ $args += @('--profile','observabilidad') }
 if ($LASTEXITCODE -ne 0) { throw 'Error en Docker Compose. No se han iniciado contenedores.' }
 & docker @args up -d
 if ($LASTEXITCODE -ne 0) { throw 'Fallo al arrancar la infraestructura principal.' }
+# La API de Catálogo consulta índices de Elasticsearch desde el primer GET.
+& (Join-Path $infra 'INICIALIZAR_INDICES.ps1')
+if(-not $?){throw 'Falló la inicialización de índices Elasticsearch.'}
 if ($ConKafka) {
   $kafka = Join-Path $proyecto 'Catalogo-Cursos-Publico-1A\docker\kafka\docker-compose.yml'
   if (-not (Test-Path $kafka)) { throw "No se encontró el compose Kafka del catálogo: $kafka" }

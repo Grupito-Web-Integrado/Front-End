@@ -1,0 +1,41 @@
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "courseScheduleId": {
+        "type": "keyword"
+      },
+      "courseId": {
+        "type": "keyword"
+      },
+      "dayOfWeek": {
+        "type": "keyword"
+      },
+      "startTime": {
+        "type": "keyword"
+      },
+      "endTime": {
+        "type": "keyword"
+      },
+      "room": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "durationMinutes": {
+        "type": "integer"
+      },
+      "createdAt": {
+        "type": "date"
+      },
+      "indexedAt": {
+        "type": "date"
+      }
+    }
+  }
+}

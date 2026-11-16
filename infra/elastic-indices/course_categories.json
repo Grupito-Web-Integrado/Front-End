@@ -1,0 +1,32 @@
+{
+  "mappings": {
+    "properties": {
+      "courseCategoryId": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "description": {
+        "type": "text"
+      },
+      "courseIds": {
+        "type": "keyword"
+      },
+      "createdAt": {
+        "type": "date"
+      },
+      "indexedAt": {
+        "type": "date"
+      }
+    }
+  }
+}

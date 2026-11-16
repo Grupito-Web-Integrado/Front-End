@@ -35,6 +35,19 @@ jobs:
             sleep 5
           done
           exit 1
+      - name: Crear índices de Elasticsearch antes de las consultas
+        run: |
+          set -e
+          for mapping in infra/elastic-indices/*.json; do
+            index=$(basename "$mapping" .json)
+            code=$(curl -s -o /dev/null -w '%{http_code}' -I "http://localhost:9200/$index")
+            if [ "$code" = "404" ]; then
+              curl -fsS -X PUT "http://localhost:9200/$index" -H 'Content-Type: application/json' --data-binary @"$mapping"
+            elif [ "$code" != "200" ]; then
+              echo "Error verificando índice $index: $code"
+              exit 1
+            fi
+          done
       - name: Compilar aplicaciones Java sin tests
         run: |
           chmod +x tmp-catalogo/mvnw tmp-pagos/mvnw

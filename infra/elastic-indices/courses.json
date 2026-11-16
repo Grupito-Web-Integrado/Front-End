@@ -1,0 +1,87 @@
+{
+  "mappings": {
+    "properties": {
+      "courseId": {
+        "type": "keyword"
+      },
+      "courseCategoryId": {
+        "type": "keyword"
+      },
+      "code": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "nameSuggest": {
+        "type": "completion"
+      },
+      "description": {
+        "type": "text"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "modality": {
+        "type": "keyword"
+      },
+      "imageKey": {
+        "type": "keyword"
+      },
+      "price": {
+        "type": "double"
+      },
+      "currency": {
+        "type": "keyword"
+      },
+      "startDate": {
+        "type": "date"
+      },
+      "endDate": {
+        "type": "date"
+      },
+      "startTime": {
+        "type": "keyword"
+      },
+      "durationHours": {
+        "type": "integer"
+      },
+      "capacity": {
+        "type": "integer"
+      },
+      "availableSlots": {
+        "type": "integer"
+      },
+      "createdAt": {
+        "type": "date"
+      },
+      "updatedAt": {
+        "type": "date"
+      },
+      "indexedAt": {
+        "type": "date"
+      },
+      "categories": {
+        "type": "keyword"
+      },
+      "schedules": {
+        "type": "object",
+        "enabled": true
+      },
+      "locations": {
+        "type": "object",
+        "enabled": true
+      }
+    }
+  }
+}
