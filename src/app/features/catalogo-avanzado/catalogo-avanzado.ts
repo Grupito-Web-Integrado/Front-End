@@ -130,14 +130,25 @@ import { portadaCurso } from '../../core/course-cover';
             <h1>{{ curso.name }}</h1>
             <p class="detail-lead">{{ curso.description }}</p>
             <div class="detail-chips"><span>{{ curso.modality === 'ONLINE' ? 'Online' : curso.modality==='HYBRID'?'Híbrido':'Presencial' }}</span><span>{{ curso.durationHours || '—' }} horas</span><span>{{ curso.availableSlots }} cupos</span><span>{{ curso.code }}</span></div>
-            <section class="detail-box"><h2>¿Qué aprenderás?</h2><p>Comprenderás los fundamentos y aplicarás tus conocimientos mediante actividades prácticas enfocadas en los objetivos de este curso.</p><p>Esta descripción es informativa; el programa detallado debe confirmarse con el equipo académico.</p></section>
-            <section class="detail-box"><h2>Horarios</h2>
-              @for (h of horarios(); track h.id) { <p>{{ h.dayOfWeek }} · {{ h.startTime }} – {{ h.endTime }} · {{ h.room || 'Por confirmar' }}</p> }
-              @if (horarios().length===0) { <p>Horario pendiente de publicación.</p> }
+            <section class="detail-box"><h2>Sobre este curso</h2>
+              <p>{{ curso.description || 'El equipo académico aún no ha publicado una descripción detallada.' }}</p>
+              <div class="course-detail-facts">
+                <div><span>Código del curso</span><strong>{{ curso.code }}</strong></div>
+                <div><span>Duración</span><strong>{{ curso.durationHours || 'Por confirmar' }} horas</strong></div>
+                @if(curso.startDate){<div><span>Fecha de inicio</span><strong>{{ curso.startDate | date:'mediumDate' }}</strong></div>}
+                @if(curso.endDate){<div><span>Fecha de fin</span><strong>{{ curso.endDate | date:'mediumDate' }}</strong></div>}
+                <div><span>Modalidad</span><strong>{{ curso.modality==='IN_PERSON'?'Presencial':curso.modality==='HYBRID'?'Híbrida':'Online' }}</strong></div>
+              </div>
             </section>
-            <section class="detail-box"><h2>Sede</h2>
-              @for (s of sedes(); track s.id) { <p>{{ s.name }} · {{ s.city || '' }} · {{ s.address || '' }}</p> }
-              @if (sedes().length===0) { <p>Consulta la modalidad del curso para conocer los detalles de asistencia.</p> }
+            <section class="detail-box"><h2>Horarios del curso</h2>
+              @for (h of horarios(); track h.id) { <p><strong>{{ diaTexto(h.dayOfWeek) }}</strong> · {{ h.startTime }} – {{ h.endTime }} · {{ h.room || 'Sala por confirmar' }}</p> }
+              @if (horarios().length===0) { <p>El horario todavía no está registrado en el sistema.</p> }
+            </section>
+            <section class="detail-box"><h2>Sedes del curso</h2>
+              @for (s of sedes(); track s.id) { <p><strong>{{ s.name }}</strong> · {{ s.city || '' }} · {{ s.address || '' }} @if(s.reference){· Referencia: {{ s.reference }}}</p> }
+              @if (sedes().length===0) {
+                <p>{{ curso.modality==='ONLINE'?'Este curso se imparte en línea.':'No hay sedes publicadas para este curso.' }}</p>
+              }
             </section>
           </div>
           <aside class="detail-buy"><div class="detail-visual"><img [src]="portadaCurso(curso)" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>Inscripción de prueba mientras no exista API de matrículas.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
@@ -220,6 +231,10 @@ export class CatalogoAvanzado implements OnInit {
     } else if(this.demo.modo()==='api') {
       this.cargarCategorias();this.cargarCursos();
     }
+  }
+  diaTexto(value:string):string {
+    const dias:Record<string,string>={MONDAY:'Lunes',TUESDAY:'Martes',WEDNESDAY:'Miércoles',THURSDAY:'Jueves',FRIDAY:'Viernes',SATURDAY:'Sábado',SUNDAY:'Domingo'};
+    return dias[value]||value;
   }
   iconoCategoria(i: number): string { return ['⌘','✦','⬡','☁','▥','◈','◎','✳','☷','◉','⚙'][i%11]; }
   nombreCategoria(c: Curso): string {
