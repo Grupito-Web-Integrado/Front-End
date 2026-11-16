@@ -118,7 +118,15 @@ test('El acceso de estudiante y administrador requiere roles de Keycloak, sin se
 test('El Indexer de Joker se observa vía health y NO se consulta como buscador directo', () => {
   const proxy=JSON.parse(read('proxy.conf.json'));
   const api=read('src/app/core/academia-api.service.ts');
-  assert.ok(proxy['/api/indexer']);
+  assert.ok(proxy['/api/indexer/**']);
   assert.ok(api.includes("('/api/indexer/health')"));
   assert.ok(api.includes("${this.catalogo}/courses/published"));
+});
+
+test('Angular Vite proxies requests deeply into each backend', () => {
+  const proxy=JSON.parse(read('proxy.conf.json'));
+  for (const path of ['/api/v1/**','/api/pagos/**','/api/matriculas/**','/api/indexer/**']) {
+    assert.ok(proxy[path], 'Sin wildcard Vite no reenvía las rutas hijas: '+path);
+  }
+  assert.equal(proxy['/api/indexer/**'].target,'http://127.0.0.1:8084');
 });
