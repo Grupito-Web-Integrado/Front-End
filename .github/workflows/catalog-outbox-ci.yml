@@ -6,61 +6,27 @@ on:
       - integrations/catalogo-outbox/**
       - .github/workflows/catalog-outbox-ci.yml
   workflow_dispatch:
+
 jobs:
   compile:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-      - name: Clone original catalog repository
+      - name: Clone catalog upstream
         run: git clone --depth 1 https://github.com/Grupito-Web-Integrado/Catalogo-Cursos-Publico-1A.git catalogo
-      - name: Apply overlays in disposable checkout
+      - name: Overlay Kafka Outbox and Flyway migration
         run: |
           cp integrations/catalogo-outbox/V3__fix_outbox_and_modalities.sql catalogo/src/main/resources/db/migration/
           cp integrations/catalogo-outbox/SpringDataOutboxRepository.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/repository/
           cp integrations/catalogo-outbox/OutboxEventPublisherImpl.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/outbox/publisher/
           cp integrations/catalogo-outbox/OutboxKafkaConfig.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/outbox/publisher/
-      - name: Compile with JDK 21
+      - name: Compile catalog with JDK21
         run: |
           cd catalogo
           chmod +x mvnw
           ./mvnw -B -DskipTests package
-      - name: Start disposable PostgreSQL Redis and Elasticsearch
-        run: |
-          cp infra/.env.example infra/.env
-          docker compose --env-file infra/.env -f infra/compose.yml up -d catalogo-db redis elasticsearch
-          for i in $(seq 1 30); do
-            if docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db pg_isready -U admin -d catalog_db; then break; fi
-            sleep 3
-          done
-      - name: Run Flyway V3 through catalog application
-        run: |
-          export SPRING_R2DBC_URL='r2dbc:postgresql://localhost:5435/catalog_db'
-          export SPRING_R2DBC_USERNAME=admin
-          export SPRING_R2DBC_PASSWORD='REEMPLAZAR_CON_CLAVE_UNICA'
-          export SPRING_FLYWAY_URL='jdbc:postgresql://localhost:5435/catalog_db'
-          export SPRING_FLYWAY_USER=admin
-          export SPRING_FLYWAY_PASSWORD='REEMPLAZAR_CON_CLAVE_UNICA'
-          export SPRING_ELASTICSEARCH_URIS='http://localhost:9200'
-          export SPRING_DATA_REDIS_HOST=localhost
-          java -jar catalogo/target/Catalogo-Cursos-0.0.1-SNAPSHOT.jar > /tmp/catalog-outbox.log 2>&1 &
-          for i in $(seq 1 40); do
-            if docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db psql -U admin -d catalog_db -tAc "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='outbox_events' AND column_name='retry_count';" | grep -q '^1
-      - name: Stop disposable database
-        if: always()
-        run: docker compose --env-file infra/.env -f infra/compose.yml down -v || true
-; then
-              echo 'Flyway agregó columnas Outbox'
-              exit 0
-            fi
-            sleep 3
-          done
-          tail -100 /tmp/catalog-outbox.log
-          exit 1
-      - name: Stop disposable database
-        if: always()
-        run: docker compose --env-file infra/.env -f infra/compose.yml down -v || true
