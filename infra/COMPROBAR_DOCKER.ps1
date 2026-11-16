@@ -1,4 +1,4 @@
-# Dot-source para comprobar o intentar iniciar Docker Desktop (motor Linux).
+﻿# Dot-source para comprobar o intentar iniciar Docker Desktop (motor Linux).
 if(-not(Get-Command docker -ErrorAction SilentlyContinue)) {
   throw 'Docker CLI no encontrado. Instala Docker Desktop para Windows y activa contenedores Linux.'
 }

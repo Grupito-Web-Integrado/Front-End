@@ -1,4 +1,4 @@
-param(
+﻿param(
   [Parameter(Mandatory=$true)]
   [ValidateSet('catalogo','matricula','pagos','indexer')]
   [string] $Servicio

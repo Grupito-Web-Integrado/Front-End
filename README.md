@@ -10,7 +10,7 @@ Se retiró la comprobación silenciosa por iframe que provocaba `Timeout when wa
 
 ## Ejecutarlo en Windows
 
-Requisitos: Docker Desktop, JDK 21, Git, Node 22.23.5 (fnm), memoria suficiente para Kafka, Elasticsearch y Keycloak. Trabaja en la carpeta `Front-End`:
+Requisitos: Docker Desktop con motor Linux, JDK 21 recomendado (JDK 24 aceptado con advertencia de compatibilidad), Git, Node 22.23.5 (fnm), memoria suficiente para Kafka, Elasticsearch y Keycloak. Trabaja en la carpeta `Front-End`:
 
 ```powershell
 git fetch origin

@@ -1,4 +1,4 @@
-# Dot-source este archivo para preparar solo esta terminal y sus procesos hijos.
+﻿# Dot-source este archivo para preparar solo esta terminal y sus procesos hijos.
 # Prefiere JDK 21. Si solo hay JDK >= 21 (por ejemplo Java 24), lo permite
 # sin tocar JAVA_HOME ni el PATH global del usuario.
 $javaCandidates = New-Object 'System.Collections.Generic.List[string]'

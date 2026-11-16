@@ -1,4 +1,4 @@
-param(
+﻿param(
   [ValidateSet('Api')][string]$Modo='Api',
   [switch]$ConObservabilidad
 )

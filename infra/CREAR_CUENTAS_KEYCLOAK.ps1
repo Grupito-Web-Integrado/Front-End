@@ -1,4 +1,4 @@
-param([switch]$Confirmar,[switch]$SinMostrarClaves)
+﻿param([switch]$Confirmar,[switch]$SinMostrarClaves)
 $ErrorActionPreference='Stop'
 $envFile=Join-Path $PSScriptRoot '.env'
 $compose=Join-Path $PSScriptRoot 'compose.yml'
