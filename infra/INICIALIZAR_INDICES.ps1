@@ -21,11 +21,14 @@ Get-ChildItem -Path $carpeta -Filter '*.json' | ForEach-Object {
   }catch{
     $status=0
     if($_.Exception.Response){$status=[int]$_.Exception.Response.StatusCode}
-    if($status -ne 404){throw "Error consultando índice $nombre: $($_.Exception.Message)"}
+    if($status -ne 404){throw "Error consultando índice $($nombre): $($_.Exception.Message)"}
   }
-  if($existe){Write-Host "Índice existente: $nombre";return}
-  Write-Host "Creando índice: $nombre"
-  $json=[IO.File]::ReadAllText($_.FullName)
-  $null=Invoke-RestMethod -Uri $url -Method Put -Body $json -ContentType 'application/json' -TimeoutSec 30
+  if($existe){
+    Write-Host "Índice existente: $nombre"
+  }else{
+    Write-Host "Creando índice: $nombre"
+    $json=[IO.File]::ReadAllText($_.FullName)
+    $null=Invoke-RestMethod -Uri $url -Method Put -Body $json -ContentType 'application/json' -TimeoutSec 30
+  }
 }
 Write-Host 'Indices Elasticsearch listos. Los contenidos se poblarán desde Kafka/indexer; no son datos reales por sí solos.' -ForegroundColor Green
