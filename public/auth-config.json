@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "url": "http://localhost:8180",
+  "realm": "myacademy",
+  "clientId": "myacademy-web"
+}

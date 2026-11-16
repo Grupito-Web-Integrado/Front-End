@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AcademiaDemoService } from './core/academia-demo.service';
+import { AuthService } from './core/auth.service';
 
 @Component({
   selector:'app-root',
@@ -11,4 +12,5 @@ import { AcademiaDemoService } from './core/academia-demo.service';
 })
 export class App {
   protected readonly demo=inject(AcademiaDemoService);
+  protected readonly auth=inject(AuthService);
 }

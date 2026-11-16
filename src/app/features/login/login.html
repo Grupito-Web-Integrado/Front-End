@@ -1,14 +1,18 @@
 <section class="shell access-page">
   <div class="access-panel">
-    <span class="section-overline">MI CUENTA · MYACADEMY</span>
-    <h1>Un espacio para seguir aprendiendo</h1>
-    @if(demo.modo()==='demo'){
-      <p>Estás en un entorno académico de demostración. Puedes explorar los cursos y probar los formularios, sin crear una cuenta.</p>
-      <div class="button-row"><a class="btn-primary" routerLink="/catalogo">Explorar cursos</a><a class="btn-outline" routerLink="/mis-matriculas">Ver mis matrículas de prueba</a></div>
-      <p class="mode-note">Este modo no tiene autenticación. No introduzcas contraseñas ni datos personales reales.</p>
+    <span class="section-overline">IDENTIDAD Y ACCESO · KEYCLOAK</span>
+    <h1>{{ denied ? 'Acceso restringido' : 'Bienvenido a MyAcademy' }}</h1>
+    @if(denied){ <p>Tu cuenta no tiene el rol requerido para acceder a esta sección. Solicita permisos al administrador del proyecto.</p> }
+    @if(auth.autenticado()){
+      <p>Sesión iniciada como <strong>{{ auth.usuario() }}</strong>.</p>
+      <p>Roles: {{ auth.roles().join(', ') || 'Sin roles asignados' }}</p>
+      <div class="button-row"><a class="btn-primary" routerLink="/catalogo">Explorar cursos</a><button class="btn-outline" (click)="salir()">Cerrar sesión</button></div>
     } @else {
-      <p>El ingreso con Keycloak todavía no está configurado. Necesitamos el realm, client ID, URL del servidor y roles definidos por el equipo.</p>
-      <a class="btn-outline" routerLink="/gestion/integraciones">Ver configuración de servicios</a>
+      <p>Inicia sesión de forma segura con Keycloak. No introduzcas contraseñas en formularios del frontend.</p>
+      <p class="mode-note">Estado de identidad: {{ auth.estado() }}. {{ auth.error() }}</p>
+      <div class="button-row"><button class="btn-primary" (click)="iniciar()">Acceder con Keycloak ↗</button><a class="btn-outline" routerLink="/catalogo">Ver cursos</a></div>
     }
+    @if(mensaje()){<p class="error-banner" role="alert">{{ mensaje() }}</p>}
+    @if(demo.modo()==='demo'){<p class="mode-note">Modo demostración activo. Las matrículas demo no se envían a los microservicios.</p>}
   </div>
 </section>

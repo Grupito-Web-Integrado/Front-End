@@ -17,7 +17,11 @@
         </div>
       </div>
     </nav>
-    <div class="header-actions"><a class="api-chip" routerLink="/gestion/integraciones">{{ demo.modo()==='demo' ? '◉ DEMO' : '● API' }}</a><a class="nav-cta" routerLink="/login">Mi cuenta <span>↗</span></a></div>
+    <div class="header-actions"><a class="api-chip" routerLink="/gestion/integraciones">{{ demo.modo()==='demo' ? '◉ DEMO' : '● API' }}</a>@if(auth.autenticado()){
+      <a class="nav-cta" routerLink="/login">{{ auth.usuario() || 'Mi cuenta' }} <span>✓</span></a>
+    } @else {
+      <a class="nav-cta" routerLink="/login">Iniciar sesión <span>↗</span></a>
+    }</div>
   </div>
 </header>
 <main><router-outlet /></main>
