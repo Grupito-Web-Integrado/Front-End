@@ -73,6 +73,14 @@ export class AcademiaDemoService {
     const arr = this.categorias().map(c => c.id === id ? { ...c, ...cambios } : c);
     this.categorias.set(arr);
     this.guardar('myacademy-categorias', arr);
+    // Actualiza la asociación anidada de los cursos: evita mostrar el nombre antiguo.
+    const actualizada = arr.find(c=>c.id===id);
+    if (actualizada) {
+      const cursos = this.cursos().map(c=>c.categoryId===id
+        ? { ...c, categories:[actualizada] } : c);
+      this.cursos.set(cursos);
+      this.guardar('myacademy-cursos', cursos);
+    }
   }
   registrarMatricula(data: Matricula): void {
     const arr = [data, ...this.matriculas()];
