@@ -169,3 +169,17 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(max-width:560px){.nav-cta{display:none}.main-nav{font-size:12px}.section-block{padding-top:55px}.section-heading{align-items:start;flex-direction:column}.categories-grid{grid-template-columns:repeat(2,1fr);gap:10px}.category-tile{min-height:117px;padding:15px 11px}.courses-grid{grid-template-columns:1fr}.hero-copy h1{font-size:41px;letter-spacing:-1.6px}.hero-search{flex-wrap:wrap}.hero-search input{padding-right:12px;min-height:47px}.hero-search .btn-primary{width:100%}.stats-grid strong{font-size:20px}.stats-grid span{font-size:10px}.cta-banner{margin-top:55px;padding:27px 22px;flex-direction:column;align-items:start}.form-grid{grid-template-columns:1fr}.form-field.wide{grid-column:auto}.workspace-heading{align-items:start;flex-direction:column}.form-card,.summary-card{padding:20px}.footer-main{grid-template-columns:1fr 1fr;gap:24px}.footer-bottom{flex-direction:column}}
 
 .editor-inline{border:1px solid #ded9f6;background:#fbfaff;margin-top:22px;padding:22px}.editor-inline h3{font:700 17px Outfit,sans-serif;margin:0}.editor-inline button{margin-right:10px}
+
+/* Portadas y categorías adaptables a cualquier número de registros */
+.category-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 18px;flex-wrap:wrap}
+.category-toolbar .active{background:#ede8fc}
+.categories-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.category-tile{min-width:0;overflow:hidden}
+.category-tile strong,.category-tile small{overflow-wrap:anywhere}
+.course-cover>img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
+.course-cover .course-cover-grid{opacity:.35}
+.course-cover .course-cover-code{z-index:2}
+.detail-visual{overflow:hidden}
+.detail-visual img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:850px){.categories-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.categories-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}

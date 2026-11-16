@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, map, of, catchError, switchMap } from 'rxjs';
 import { Categoria, Curso, DiagnosticoApi, Horario, PageResult, Pago, Sede, Sugerencia } from './academia.models';
 
 /**
@@ -13,6 +13,25 @@ export class AcademiaApiService {
   private catalogo = '/api/v1';
   private pagos = '/api/pagos';
 
+  /** La respuesta CourseSummaryDto no contiene categorías: se consultan los detalles visibles. */
+  enriquecerCursos(cursos: Curso[]): Observable<Curso[]> {
+    if (!cursos.length) return of([]);
+    return forkJoin(cursos.map(resumen => this.curso(resumen.id).pipe(
+      map(detalle => ({ ...resumen, ...detalle,
+        categoryId: detalle.categories?.[0]?.id || resumen.categoryId })),
+      catchError(() => of(resumen))
+    )));
+  }
+  categoriasActivasCompletas(): Observable<Categoria[]> {
+    return this.categorias(0,100).pipe(switchMap(primera => {
+      const total = Math.min(Math.max(primera.totalPages,1),100);
+      if (total <= 1) return of(primera.content);
+      const adicionales = Array.from({length:total-1},(_,i)=>this.categorias(i+1,100));
+      return forkJoin(adicionales).pipe(map(resto => [
+        ...primera.content, ...resto.flatMap(p=>p.content)
+      ]));
+    }));
+  }
   cursosPublicados(page = 0, size = 50): Observable<PageResult<Curso>> {
     return this.http.get<PageResult<Curso>>(`${this.catalogo}/courses/published`, { params: { page, size } });
   }

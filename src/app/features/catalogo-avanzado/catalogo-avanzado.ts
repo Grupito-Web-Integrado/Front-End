@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Subject, of, switchMap, debounceTime, distinctUntilChanged, catchError } from 'rxjs';
+import { Subject, of, switchMap, debounceTime, distinctUntilChanged, catchError, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AcademiaApiService } from '../../core/academia-api.service';
 import { AcademiaDemoService } from '../../core/academia-demo.service';
@@ -60,11 +60,16 @@ import { CursoCard } from '../curso-card/curso-card';
 
     <section class="shell section-block" id="categorias">
       <div class="section-heading"><div><span class="section-overline">ENCUENTRA TU CAMINO</span><h2>Explora por categoría</h2><p>Una oportunidad para cada interés y objetivo.</p></div><a routerLink="/catalogo" class="text-link">Ver todos los cursos ↗</a></div>
+      <div class="category-toolbar">
+        <button class="btn-outline" [class.active]="categoriaSeleccionada()===''" (click)="elegirCategoria('')">Todas las categorías</button>
+        @if (categorias().length > 6) {
+          <button class="text-link" type="button" (click)="mostrarTodasCategorias.set(!mostrarTodasCategorias())">
+            {{ mostrarTodasCategorias() ? 'Mostrar solo seis' : 'Ver las '+categorias().length+' categorías' }}
+          </button>
+        }
+      </div>
       <div class="categories-grid">
-        <button class="category-tile" [class.active]="categoriaSeleccionada()===''" (click)="elegirCategoria('')">
-          <span class="category-emoji">✧</span><strong>Todos los cursos</strong><small>Explorar catálogo</small>
-        </button>
-        @for (cat of categorias(); track cat.id; let i = $index) {
+        @for (cat of categoriasPrincipales(); track cat.id; let i = $index) {
           <button class="category-tile" [class.active]="categoriaSeleccionada()===cat.id" (click)="elegirCategoria(cat.id)">
             <span class="category-emoji">{{ iconoCategoria(i) }}</span><strong>{{ cat.name }}</strong><small>Explorar cursos</small>
           </button>
@@ -79,7 +84,7 @@ import { CursoCard } from '../curso-card/curso-card';
       <div class="filters-panel">
         <label class="filter-group"><span>Modalidad</span>
           <select [ngModel]="modalidad()" (ngModelChange)="modalidad.set($event)">
-            <option value="">Todas las modalidades</option><option value="ONLINE">Online</option><option value="HYBRID">Híbrida</option><option value="PRESENTIAL">Presencial</option>
+            <option value="">Todas las modalidades</option><option value="ONLINE">Online</option><option value="HYBRID">Híbrida</option><option value="IN_PERSON">Presencial</option>
           </select>
         </label>
         <label class="filter-group"><span>Precio máximo</span>
@@ -134,7 +139,7 @@ import { CursoCard } from '../curso-card/curso-card';
               @if (sedes().length===0) { <p>Consulta la modalidad del curso para conocer los detalles de asistencia.</p> }
             </section>
           </div>
-          <aside class="detail-buy"><div class="detail-visual"><span>✦</span><strong>MYACADEMY</strong></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>Inscripción de prueba mientras no exista API de matrículas.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
+          <aside class="detail-buy"><div class="detail-visual"><img [src]="curso.imageUrl || '/course-covers/area-0.svg'" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>Inscripción de prueba mientras no exista API de matrículas.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
         </div>
       }
     </section>
@@ -148,6 +153,7 @@ export class CatalogoAvanzado implements OnInit {
   private destroyRef = inject(DestroyRef);
   readonly vista = this.route.snapshot.data['vista'] === 'detalle' ? 'detalle' : 'catalogo';
   readonly consulta = signal('');
+  readonly mostrarTodasCategorias = signal(false);
   readonly categoriaSeleccionada = signal('');
   readonly modalidad = signal('');
   readonly orden = signal('relevancia');
@@ -165,6 +171,7 @@ export class CatalogoAvanzado implements OnInit {
   readonly totalPaginas = signal(1);
   private busquedas = new Subject<string>();
   readonly categorias = computed(() => this.demo.modo()==='demo' ? this.demo.categorias().filter(c=>c.status==='ACTIVE') : this.categoriasApi());
+  readonly categoriasPrincipales = computed(() => this.mostrarTodasCategorias() ? this.categorias() : this.categorias().slice(0,6));
   readonly cursosVisibles = computed(() => {
     const q = this.consulta().trim().toLowerCase();
     const modo = this.modalidad();
@@ -230,8 +237,8 @@ export class CatalogoAvanzado implements OnInit {
   }
   cambiarPagina(d: number):void {this.pagina.update(p=>Math.max(0,Math.min(this.totalPaginas()-1,p+d)));this.cargarCursos();}
   private cargarCategorias():void {
-    this.api.categorias().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:p=>this.categoriasApi.set(p.content),
+    this.api.categoriasActivasCompletas().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:categorias=>this.categoriasApi.set(categorias),
       error:()=>this.error.set('No se pudieron cargar las categorías de la API.')
     });
   }
@@ -239,13 +246,16 @@ export class CatalogoAvanzado implements OnInit {
     this.cargando.set(true);this.error.set('');
     const cat=this.categoriaSeleccionada();
     const q=this.consulta().trim();
-    const req=cat ? this.api.cursosPorCategoria(cat,this.pagina(),50)
-      : q ? this.api.buscarCursos(q,this.pagina(),50)
-      : this.api.cursosPublicados(this.pagina(),50);
-    req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:p=>{
-        this.cursosApi.set(cat && q ? p.content.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())) : p.content);
-        this.totalPaginas.set(Math.max(1,p.totalPages));this.cargando.set(false);
+    const req=cat ? this.api.cursosPorCategoria(cat,this.pagina(),12)
+      : q ? this.api.buscarCursos(q,this.pagina(),12)
+      : this.api.cursosPublicados(this.pagina(),12);
+    req.pipe(
+      switchMap(p => this.api.enriquecerCursos(p.content).pipe(map(items=>({page:p,items})))),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next:({page,items})=>{
+        this.cursosApi.set(cat && q ? items.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())) : items);
+        this.totalPaginas.set(Math.max(1,page.totalPages));this.cargando.set(false);
       },
       error:()=>{this.cursosApi.set([]);this.error.set('No hay conexión con el catálogo. Inicia el microservicio o activa el modo demostración desde Conexiones.');this.cargando.set(false);}
     });

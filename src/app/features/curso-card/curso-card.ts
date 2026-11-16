@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Curso } from '../../core/academia.models';
+import { CATEGORIAS_DEMO } from '../../core/demo-catalog';
 
 @Component({
   selector: 'app-curso-card',
@@ -10,8 +11,8 @@ import { Curso } from '../../core/academia.models';
   template: `
   <article class="course-card">
     <a class="course-cover" [ngClass]="'cover-'+paleta()" [routerLink]="['/curso', curso.id]" [attr.aria-label]="'Ver '+curso.name">
+      <img [src]="imagen()" [alt]="'Imagen ilustrativa: '+curso.name" loading="lazy" (error)="imagenError($event)">
       <span class="course-cover-grid"></span>
-      <span class="course-cover-symbol">{{ simbolo() }}</span>
       <span class="course-cover-code">{{ curso.code }}</span>
     </a>
     <div class="course-card-content">
@@ -33,9 +34,22 @@ import { Curso } from '../../core/academia.models';
 export class CursoCard {
   @Input({ required: true }) curso!: Curso;
   @Input() categoria = 'Formación tecnológica';
+  imagen(): string {
+    const url = this.curso.imageUrl;
+    if (url && (url.startsWith('/course-covers/') || /^https:\/\//.test(url))) return url;
+    const categoryId = this.curso.categoryId || this.curso.categories?.[0]?.id;
+    const index = CATEGORIAS_DEMO.findIndex(c=>c.id===categoryId);
+    // Ilustración por categoría o índice estable cuando la API no incluye imagen.
+    const area = index>=0 ? index : this.curso.name.length % 11;
+    return '/course-covers/area-'+area+'.svg';
+  }
+  imagenError(event: Event): void {
+    const image = event.target as HTMLImageElement;
+    if (!image.src.endsWith('area-0.svg')) image.src='/course-covers/area-0.svg';
+  }
   paleta(): number { return (this.curso.name.length + this.curso.code.length) % 6; }
   modalidad(): string {
-    return this.curso.modality === 'ONLINE' ? 'Online' : this.curso.modality === 'PRESENTIAL' ? 'Presencial' : 'Híbrido';
+    return this.curso.modality === 'ONLINE' ? 'Online' : this.curso.modality === 'IN_PERSON' ? 'Presencial' : 'Híbrido';
   }
   simbolo(): string {
     const texto = this.curso.name.toLowerCase();
