@@ -47,7 +47,9 @@ test('Existe un catálogo demo de 35 cursos y 11 categorías', () => {
 
 test('El formulario de matrícula informa que opera en modo demostración', () => {
   const panel = read('src/app/features/academia-panel/academia-panel.ts');
-  assert.ok(panel.includes('El microservicio de matrículas no ofrece todavía endpoints HTTP'));
+  assert.ok(panel.includes('Matrícula de demostración'));
+  assert.ok(panel.includes('this.api.registrarMatricula('));
+  assert.ok(panel.includes('this.api.listarMatriculas()'));
   assert.ok(panel.includes('No se realizará ningún cobro real'));
 });
 
