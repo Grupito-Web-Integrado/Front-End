@@ -34,6 +34,7 @@ switch($Servicio) {
     $env:SPRING_DATA_REDIS_HOST='localhost'
     $env:SPRING_DATA_REDIS_PORT='6379'
     $env:SPRING_KAFKA_BOOTSTRAP_SERVERS='localhost:9092'
+    $env:SPRING_PROFILES_ACTIVE='keycloak'
     $env:KEYCLOAK_ISSUER_URI='http://localhost:8180/realms/myacademy'
     $env:KEYCLOAK_JWK_SET_URI='http://localhost:8180/realms/myacademy/protocol/openid-connect/certs'
   }
@@ -47,7 +48,12 @@ switch($Servicio) {
     $env:SPRING_FLYWAY_PASSWORD=$cfg['MATRICULA_DB_PASSWORD']
     $env:SPRING_KAFKA_BOOTSTRAP_SERVERS='localhost:9092'
   }
-  'pagos' { $env:SERVER_PORT='8081' }
+  'pagos' {
+    $env:SERVER_PORT='8081'
+    $env:SPRING_PROFILES_ACTIVE='keycloak'
+    $env:KEYCLOAK_ISSUER_URI='http://localhost:8180/realms/myacademy'
+    $env:KEYCLOAK_JWK_SET_URI='http://localhost:8180/realms/myacademy/protocol/openid-connect/certs'
+  }
   'indexer' {
     $env:SERVER_PORT='8084'
     $env:SPRING_KAFKA_BOOTSTRAP_SERVERS='localhost:9092'

@@ -74,3 +74,6 @@ Si los puertos 5435/5436/6379/9200 ya están ocupados por los Docker Compose de 
 2. El Indexer contiene configuración básica y debe comprobarse con Kafka y Elasticsearch funcionando. No sustituye el endpoint de búsqueda existente del Catálogo.
 3. Pagos usa H2 en memoria: reiniciar el servicio elimina sus registros.
 4. El equipo debe revisar compatibilidad JDK 21, migraciones Flyway, dependencias Maven y el orden de arranque real antes de la integración total.
+
+### Backend autenticado (adaptaciones opt-in)
+Una vez verificados los repositorios Java, aplica **explícitamente** `infra/APLICAR_SEGURIDAD_BACKENDS.ps1 -Catalogo -Pagos` si el equipo lo autoriza. El script crea respaldo y no trabaja sobre repositorios con cambios pendientes. Consulta `docs/SEGURIDAD_BACKEND.md`.
