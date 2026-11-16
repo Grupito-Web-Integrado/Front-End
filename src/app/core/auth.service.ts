@@ -19,6 +19,7 @@ export type EstadoIdentidad = 'servidor' | 'iniciando' | 'disponible' | 'no-conf
 export class AuthService {
   private readonly platform = inject(PLATFORM_ID);
   private adapter: Keycloak | null = null;
+  private discoveryUrl = '';
   private startPromise: Promise<void> | null = null;
   readonly estado = signal<EstadoIdentidad>('iniciando');
   readonly autenticado = signal(false);
@@ -47,6 +48,7 @@ export class AuthService {
       if (!cfg.enabled || !cfg.url || !cfg.realm || !cfg.clientId) {
         this.estado.set('no-configurado'); return;
       }
+      this.discoveryUrl = cfg.url.replace(/\/$/, '')+'/realms/'+encodeURIComponent(cfg.realm)+'/.well-known/openid-configuration';
       const modulo = await import('keycloak-js');
       const adapter = new modulo.default({
         url: cfg.url, realm: cfg.realm, clientId: cfg.clientId
@@ -97,6 +99,13 @@ export class AuthService {
     await this.iniciar();
     if (this.estado() !== 'disponible' || !this.adapter) {
       throw new Error(this.error() || 'Keycloak no responde en http://localhost:8180. Inicia la infraestructura e inténtalo nuevamente.');
+    }
+    // Antes de sacar al usuario del sitio, comprobar la conexión real al servidor.
+    // no-cors evita depender de las cabeceras CORS del endpoint público OIDC.
+    try {
+      await fetch(this.discoveryUrl, {mode:'no-cors',cache:'no-store',signal:AbortSignal.timeout(4000)});
+    } catch {
+      throw new Error('No se puede conectar a Keycloak en '+this.discoveryUrl+'. Inicia Docker Desktop y el servicio Keycloak (puerto 8180).');
     }
     const ruta = returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/mis-matriculas';
     // No se concede un rol desde el frontend: solo se solicita autenticación.
