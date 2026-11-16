@@ -15,3 +15,20 @@ La captura mostraba `Timeout when waiting for 3rd party check iframe message`. Q
 Los cuatro consumers Kafka de su repositorio siguen bajo su control. MyAcademy verifica su health y obtiene resultados de búsqueda a través del servicio Catálogo. Ver `docs/INTEGRACION_INDEXER_JOKER.md`. Ningún archivo de Joker se ha sobrescrito.
 
 **Esto todavía es validación local de un proyecto académico, no una certificación de producción.**
+
+## Correccion Windows: Java 24 y Docker apagado
+
+Si aparece `API requiere Java JDK 21. Detectado: java 24...`, ya no es necesario reinstalar Node ni Angular. La revision actual ejecuta `infra/SELECCIONAR_JAVA.ps1` al iniciar: busca JDK 21 (incluidos JDK de Eclipse Adoptium, Java, Microsoft, Corretto y Zulu) y lo prefiere; si solo hay JDK >= 21, acepta la version activa y advierte de posibles incompatibilidades de Maven. Los cambios en `JAVA_HOME` y `PATH` son solo para la terminal de ejecucion y sus procesos hijos; no afectan otros proyectos.
+
+Si aparece `failed to connect to dockerDesktopLinuxEngine`, abre Docker Desktop e inicia el motor Linux. `infra/COMPROBAR_DOCKER.ps1` intenta abrir Docker Desktop cuando esta instalado y verifica que `docker info --format '{{.OSType}}'` sea `linux`. Si no responde, el script detiene el arranque ANTES de intentar crear usuarios en Keycloak. El sistema requiere Docker Desktop con backend WSL 2 en Windows.
+
+Secuencia:
+```powershell
+git pull --ff-only
+docker info --format '{{.OSType}}'
+.\ABRIR_MYACADEMY.bat
+
+# Solo cuando Keycloak responda en 8180:
+.\infra\CREAR_CUENTAS_KEYCLOAK.ps1 -Confirmar
+.\infra\VERIFICAR.ps1
+```

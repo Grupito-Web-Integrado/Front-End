@@ -12,7 +12,7 @@ $cfg = @{}
 foreach($line in [System.IO.File]::ReadAllLines($envfile)){
   if($line -match '^\s*([^#=]+)=(.*)$') { $cfg[$matches[1].Trim()] = $matches[2].Trim() }
 }
-if (-not (Get-Command java -ErrorAction SilentlyContinue)) { throw 'Instala JDK 21 y configura JAVA_HOME antes de ejecutar Maven.' }
+. (Join-Path $PSScriptRoot 'SELECCIONAR_JAVA.ps1')
 $folders=@{
   catalogo='Catalogo-Cursos-Publico-1A'
   matricula='Matricula-Publico_1E'

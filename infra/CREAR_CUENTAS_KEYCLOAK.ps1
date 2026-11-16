@@ -3,6 +3,14 @@ $ErrorActionPreference='Stop'
 $envFile=Join-Path $PSScriptRoot '.env'
 $compose=Join-Path $PSScriptRoot 'compose.yml'
 if(-not(Test-Path $envFile)){throw 'Primero ejecuta INICIAR_INFRA.ps1 y espera Keycloak.'}
+. (Join-Path $PSScriptRoot 'COMPROBAR_DOCKER.ps1')
+$realmDiscovery='http://localhost:8180/realms/myacademy/.well-known/openid-configuration'
+try {
+  $realmResponse=Invoke-WebRequest -UseBasicParsing -Uri $realmDiscovery -TimeoutSec 8
+  if($realmResponse.StatusCode -ne 200) {throw 'OIDC no disponible'}
+} catch {
+  throw 'Keycloak aun no responde en localhost:8180. Ejecuta ABRIR_MYACADEMY.bat, verifica docker compose ps y vuelve a intentar crear cuentas.'
+}
 if(-not $Confirmar){
   Write-Host 'Este script crea DOS CUENTAS REALES de Keycloak para validación local:' -ForegroundColor Cyan
   Write-Host '  - estudiante.myacademy (rol ESTUDIANTE)'

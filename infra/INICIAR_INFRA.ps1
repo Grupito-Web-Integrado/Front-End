@@ -25,11 +25,7 @@ if (-not (Test-Path $envfile)) {
   [System.IO.File]::WriteAllText($envfile, $content + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))
   Write-Host "Configuracion privada generada en $envfile" -ForegroundColor Green
 }
-if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-  throw "Docker no esta disponible. Abre Docker Desktop y comprueba: docker version"
-}
-docker info *> $null
-if ($LASTEXITCODE -ne 0) { throw 'El motor Docker no responde. Inicia Docker Desktop.' }
+. (Join-Path $PSScriptRoot 'COMPROBAR_DOCKER.ps1')
 if ($PrepararRepos -or $ConKafka) {
   $repos = @(
     @{ folder='Catalogo-Cursos-Publico-1A'; url='https://github.com/Grupito-Web-Integrado/Catalogo-Cursos-Publico-1A.git' },

@@ -5,13 +5,12 @@ param(
 $ErrorActionPreference='Stop'
 $front=Split-Path $PSScriptRoot -Parent
 $root=Split-Path $front -Parent
-foreach($cmd in @('git','docker','java')){
-  if(-not(Get-Command $cmd -ErrorAction SilentlyContinue)){throw "Para API se necesita $cmd."}
+if(-not(Get-Command git -ErrorAction SilentlyContinue)) {
+  throw 'Git no esta disponible. Instala Git antes de sincronizar los microservicios.'
 }
-$javaInfo=(& java --version | Out-String)
-if($javaInfo -notmatch '(?im)^(?:openjdk|java)\s+(?:version\s+)?"?21(?:\.|\s|"|$)'){
-  throw "API requiere Java JDK 21. Detectado: $javaInfo"
-}
+. (Join-Path $PSScriptRoot 'SELECCIONAR_JAVA.ps1')
+. (Join-Path $PSScriptRoot 'COMPROBAR_DOCKER.ps1')
+
 $required=@(
   @{repo='Catalogo-Cursos-Publico-1A';file='src\main\java\com\example\Catalogo_Cursos\infrastructure\input\rest\outbox\publisher\OutboxKafkaConfig.java'},
   @{repo='Catalogo-Cursos-Publico-1A';file='src\main\resources\application-keycloak.yaml'},
