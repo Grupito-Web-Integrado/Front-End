@@ -77,3 +77,21 @@ Si los puertos 5435/5436/6379/9200 ya están ocupados por los Docker Compose de 
 
 ### Backend autenticado (adaptaciones opt-in)
 Una vez verificados los repositorios Java, aplica **explícitamente** `infra/APLICAR_SEGURIDAD_BACKENDS.ps1 -Catalogo -Pagos` si el equipo lo autoriza. El script crea respaldo y no trabaja sobre repositorios con cambios pendientes. Consulta `docs/SEGURIDAD_BACKEND.md`.
+
+## Inicio único y apagado seguro
+
+Para arrancar los contenedores del entorno, abrir las consolas Maven y ejecutar Angular con Node administrado por fnm, desde `Front-End`:
+
+```powershell
+.\infra\INICIAR_TODO.ps1
+```
+
+Si tu equipo no puede arrancar simultáneamente Kafka de tres brokers y Jaeger, prueba `./infra/INICIAR_TODO.ps1 -Ligero` (las APIs que dependen de Kafka podrían fallar). No es un comando de despliegue en producción.
+
+Para detener **solo la infraestructura Docker** y conservar sus volúmenes:
+
+```powershell
+.\infra\DETENER_INFRA.ps1
+```
+
+Cierra las consolas Java y Angular con Ctrl+C. La infraestructura Keycloak/DB se arrancó y comprobó en un runner temporal de GitHub Actions, no en tu Windows.
