@@ -16,5 +16,14 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "warn"
+  },
+  "/api/indexer": {
+    "target": "http://127.0.0.1:8084",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/indexer": "/actuator"
+    },
+    "logLevel": "warn"
   }
 }

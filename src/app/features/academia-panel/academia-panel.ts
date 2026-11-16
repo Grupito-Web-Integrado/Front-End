@@ -16,7 +16,7 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
   template: `
   <section class="shell workspace-section">
     <div class="detail-breadcrumb"><a routerLink="/inicio">Inicio</a> / {{ titulo() }}</div>
-    <div class="workspace-heading"><div><span class="section-overline">MYACADEMY · {{ demo.modo()==='demo' ? 'MODO DEMOSTRACIÓN' : 'MODO API' }}</span><h1>{{ titulo() }}</h1><p>{{ subtitulo() }}</p></div><a routerLink="/catalogo" class="btn-outline">← Volver al catálogo</a></div>
+    <div class="workspace-heading"><div><span class="section-overline">MYACADEMY · PLATAFORMA ACADÉMICA</span><h1>{{ titulo() }}</h1><p>{{ subtitulo() }}</p></div><a routerLink="/catalogo" class="btn-outline">← Volver al catálogo</a></div>
     @if (mensaje()) { <div class="success-banner" role="status">{{ mensaje() }}</div> }
     @if (error()) { <div class="error-banner" role="alert">{{ error() }}</div> }
     @if (cargando()) { <p class="mode-note">Cargando datos…</p> }
@@ -26,7 +26,7 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
         <div class="form-layout">
           <form class="form-card" (ngSubmit)="registrarMatricula()">
             <h2>Datos del estudiante</h2>
-            <p class="mode-note">{{ demo.modo()==='demo' ? 'Matrícula de demostración, guardada en este navegador.' : 'Solicitud al microservicio de Matrículas; el pago y la reserva definitiva de cupos todavía no están integrados.' }}</p>
+            <p class="mode-note">Solicitud registrada en el microservicio de Matrículas. La reserva definitiva del cupo y el cobro requieren confirmación.</p>
             <div class="form-grid">
               <label class="form-field wide"><span>Nombre completo *</span><input name="nombre" [(ngModel)]="formMatricula.nombre" required minlength="3" placeholder="Nombres y apellidos"></label>
               <label class="form-field"><span>Correo electrónico *</span><input name="correo" type="email" [(ngModel)]="formMatricula.correo" required placeholder="correo@ejemplo.com"></label>
@@ -34,17 +34,17 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
               <label class="form-field"><span>Tipo de documento</span><select name="tipoDoc" [(ngModel)]="formMatricula.tipoDocumento"><option>DNI</option><option>CE</option><option>PASAPORTE</option></select></label>
               <label class="form-field"><span>Número de documento *</span><input name="documento" [(ngModel)]="formMatricula.documento" required placeholder="Documento de identidad"></label>
             </div>
-            <button class="btn-primary" type="submit">{{ demo.modo()==='demo' ? 'Registrar matrícula de prueba' : 'Solicitar matrícula' }} ↗</button>
+            <button class="btn-primary" type="submit">Solicitar matrícula ↗</button>
           </form>
           <aside class="summary-card"><span class="section-overline">TU ELECCIÓN</span><h2>{{ curso.name }}</h2><p>{{ curso.modality }} · {{ curso.durationHours || '—' }} horas</p><div class="divider-line"></div><div class="total-row"><span>Importe</span><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><small>No se realizará ningún cobro real.</small></aside>
         </div>
       } @else { <div class="empty-state">No se encontró el curso. <a routerLink="/catalogo">Volver a buscar</a></div> }
     }
     @if (vista==='confirmacion') {
-      <div class="form-card confirmation-box"><span class="big-check">✓</span><h2>{{ demo.modo()==='demo'?'Matrícula demo registrada':'Solicitud de matrícula registrada' }}</h2><p>{{ demo.modo()==='demo'?'Registro guardado en este navegador.':'La solicitud fue almacenada en PostgreSQL. El pago y la reserva definitiva de cupos no se han realizado.' }}</p><a class="btn-primary" routerLink="/mis-matriculas">Ver mis matrículas</a></div>
+      <div class="form-card confirmation-box"><span class="big-check">✓</span><h2>Solicitud de matrícula registrada</h2><p>La solicitud fue enviada al sistema de matrículas. Consulta su estado; esto no confirma el pago ni la reserva definitiva del cupo.</p><a class="btn-primary" routerLink="/mis-matriculas">Ver mis matrículas</a></div>
     }
     @if (vista==='matriculas' || vista==='estudiantes') {
-      <div class="table-card"><div class="table-heading"><h2>{{ vista==='estudiantes'?'Estudiantes registrados (demo)':'Historial de matrículas' }}</h2><button class="btn-outline" (click)="exportarMatriculas()">Exportar CSV</button></div>
+      <div class="table-card"><div class="table-heading"><h2>{{ vista==='estudiantes'?'Matrículas de estudiantes':'Historial de matrículas' }}</h2><button class="btn-outline" (click)="exportarMatriculas()">Exportar CSV</button></div>
         <div class="table-scroll"><table><thead><tr><th>Estudiante</th><th>Documento</th><th>Curso</th><th>Fecha</th><th>Importe</th><th>Estado</th></tr></thead><tbody>
         @for (m of matriculasVisibles(); track m.id) { <tr><td><strong>{{m.nombre}}</strong><small>{{m.correo}}</small></td><td>{{m.tipoDocumento}} {{m.documento}}</td><td>{{m.courseName}}</td><td>{{m.fecha | date:'short'}}</td><td>S/ {{m.importe | number:'1.2-2'}}</td><td><span class="status-pill">{{m.estado}}</span></td></tr> }
         @if (matriculasVisibles().length===0) { <tr><td colspan="6" class="table-empty">No hay matrículas registradas con este perfil.</td></tr> }
@@ -52,7 +52,7 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
       </div>
     }
     @if (vista==='pagos') {
-      <div class="form-card compact-form"><h2>Registrar pago {{demo.modo()==='demo'?'de demostración':'en servicio de pruebas'}}</h2><p>Los estados del servicio de pagos son EN_PROCESO, PAGADO y CANCELADO. Este formulario no inicia un pago con tarjeta.</p><div class="inline-form"><label class="form-field"><span>Monto (S/)</span><input type="number" name="monto" [(ngModel)]="montoPago" min="0.01" step="0.01"></label><button class="btn-primary" (click)="crearPago()">Crear registro</button></div></div>
+      <div class="form-card compact-form"><h2>Registrar movimiento de pago</h2><p>Los estados del servicio de pagos son EN_PROCESO, PAGADO y CANCELADO. Este formulario no inicia un pago con tarjeta.</p><div class="inline-form"><label class="form-field"><span>Monto (S/)</span><input type="number" name="monto" [(ngModel)]="montoPago" min="0.01" step="0.01"></label><button class="btn-primary" (click)="crearPago()">Crear registro</button></div></div>
       <div class="table-card"><div class="table-heading"><h2>Registros de pago</h2><button class="btn-outline" (click)="cargarPagos()">Actualizar</button></div><div class="table-scroll"><table><thead><tr><th>ID</th><th>Monto</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
       @for (p of pagosVisibles(); track p.id) { <tr><td>#{{p.id}}</td><td>S/ {{p.monto|number:'1.2-2'}}</td><td><span class="status-pill">{{p.estado}}</span></td><td>@if(p.estado==='EN_PROCESO'){<button class="table-link" (click)="cambiarPago(p,'PAGADO')">Confirmar</button><button class="table-link danger" (click)="cambiarPago(p,'CANCELADO')">Cancelar</button>} @else { — }</td></tr> }
       @if(pagosVisibles().length===0){<tr><td colspan="4" class="table-empty">No hay registros de pago.</td></tr>}
@@ -152,13 +152,20 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
       </div>
     }
     @if(vista==='integraciones'){
-      <div class="form-card"><h2>Conexiones y servicios</h2><p>Elige un origen explícito. Si la API falla, no se muestran datos ficticios como respuestas reales.</p>
-      <div class="mode-toggle"><button [class.selected]="demo.modo()==='demo'" (click)="cambiarModo('demo')">Modo demostración</button><button [class.selected]="demo.modo()==='api'" (click)="cambiarModo('api')">API real</button></div>
-      <p class="mode-note">En desarrollo, Angular envía /api/v1 a catálogo y /api/pagos a pagos mediante el proxy. Matrículas continúa en modo demostración hasta tener endpoints.</p>
-      <button class="btn-primary" (click)="diagnosticar()">Probar conexiones</button>
-      <div class="diagnostics-grid">
-        @for(d of diagnosticos();track d.nombre){<div class="diagnostic-card"><strong>{{d.nombre}}</strong><span [class.online]="d.estado==='online'" [class.offline]="d.estado==='offline'">{{d.estado==='online'?'● Disponible':'● Sin conexión'}}</span><p>{{d.detalle}}</p></div>}
-      </div></div>
+      <div class="form-card"><h2>Estado de microservicios</h2>
+        <p>Catálogo es la API de consulta; el Indexer de Joker consume Kafka y actualiza Elasticsearch. No expone un buscador público separado.</p>
+        <button class="btn-primary" (click)="diagnosticar()" [disabled]="cargando()">Comprobar servicios</button>
+        <div class="diagnostics-grid">
+          @for(d of diagnosticos();track d.nombre){
+            <div class="diagnostic-card">
+              <strong>{{d.nombre}}</strong>
+              <span [class.online]="d.estado==='online'" [class.offline]="d.estado==='offline'">{{d.estado==='online'?'● Disponible':'● Sin conexión'}}</span>
+              <p>{{d.detalle}}</p>
+            </div>
+          }
+        </div>
+        <p class="mode-note">Las pantallas utilizan únicamente respuestas de los microservicios; si un servicio está desconectado, su sección muestra un error.</p>
+      </div>
     }
   </section>
   `
@@ -191,17 +198,16 @@ export class AcademiaPanel implements OnInit {
   edicionHorario={dayOfWeek:'MONDAY',startTime:'09:00',endTime:'11:00',room:''};
   edicionSede={name:'',address:'',city:'',reference:'',capacity:30};
   editarNombre='';editarDescripcion='';editarPrecio=0;
-  cursosVisibles():Curso[]{return this.demo.modo()==='demo'?this.demo.cursos():this.cursosApi();}
-  categoriasVisibles():Categoria[]{return this.demo.modo()==='demo'?this.demo.categorias():this.categoriasApi();}
-  matriculasVisibles():Matricula[]{return this.demo.modo()==='demo'?this.demo.matriculas():this.matriculasApi();}
-  pagosVisibles():Pago[]{return this.demo.modo()==='demo'?this.demo.pagos():this.pagosApi();}
+  cursosVisibles():Curso[]{return this.cursosApi();}
+  categoriasVisibles():Categoria[]{return this.categoriasApi();}
+  matriculasVisibles():Matricula[]{return this.matriculasApi();}
+  pagosVisibles():Pago[]{return this.pagosApi();}
   titulo():string{return ({matricula:'Formaliza tu matrícula',confirmacion:'Confirmación',matriculas:'Mis matrículas',estudiantes:'Estudiantes',pagos:'Gestión de pagos',cursos:'Administrar cursos',categorias:'Categorías',horarios:'Horarios',sedes:'Sedes',integraciones:'Conexiones API'} as Record<string,string>)[this.vista]||'Mi espacio';}
-  subtitulo():string{return this.vista==='integraciones'?'Verifica el estado de los microservicios y cambia el origen de datos.':'Gestiona tus cursos y operaciones desde una única plataforma.';}
+  subtitulo():string{return this.vista==='integraciones'?'Consulta Catálogo, Indexer, Matrículas y Pagos.':'Gestiona tus cursos y operaciones desde una única plataforma.';}
   ngOnInit():void {
     if(this.vista==='matricula'){
       const id=this.route.snapshot.paramMap.get('idCurso')||'';
-      if(this.demo.modo()==='demo')this.cursoActual.set(this.demo.cursos().find(c=>c.id===id)||null);
-      else this.api.curso(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:c=>this.cursoActual.set(c),error:()=>this.error.set('No se pudo recuperar el curso.')});
+      this.api.curso(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:c=>this.cursoActual.set(c),error:()=>this.error.set('No se pudo recuperar el curso.')});
     }
     if(['cursos','horarios','sedes'].includes(this.vista))this.cargarCursos();
     if(['cursos','categorias'].includes(this.vista))this.cargarCategorias();
@@ -214,13 +220,13 @@ export class AcademiaPanel implements OnInit {
   }
   private ok(msg:string):void{this.mensaje.set(msg);this.error.set('');}
   cargarCursos():void{
-    if(this.demo.modo()==='demo')return;
+    // Todos los datos proceden del backend; sin almacenamiento local ficticio.
     this.api.buscarCriterios({},0,100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next:p=>this.cursosApi.set(p.content),error:e=>this.fallo(e)
     });
   }
   cargarCategorias():void{
-    if(this.demo.modo()==='demo')return;
+    // Todos los datos proceden del backend; sin almacenamiento local ficticio.
     this.api.todasCategorias(0,100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:p=>this.categoriasApi.set(p.content),error:e=>this.fallo(e)});
   }
   registrarMatricula():void {
@@ -267,7 +273,7 @@ export class AcademiaPanel implements OnInit {
     const a=document.createElement('a');a.href=url;a.download='matriculas-myacademy.csv';a.click();URL.revokeObjectURL(url);
   }
   cargarPagos():void{
-    if(this.demo.modo()==='demo')return;
+    // Todos los datos proceden del backend; sin almacenamiento local ficticio.
     this.api.listarPagos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:x=>this.pagosApi.set(x),error:e=>this.fallo(e)});
   }
   crearPago():void{
@@ -419,7 +425,6 @@ export class AcademiaPanel implements OnInit {
       error:err=>this.fallo(err)
     });
   }
-  cambiarModo(modo:'demo'|'api'):void{this.demo.establecerModo(modo);this.ok('Modo '+modo.toUpperCase()+' seleccionado. Se aplicará al navegar a otras vistas.');}
   diagnosticar():void{
     this.diagnosticos.set([]);this.cargando.set(true);
     let faltan=2;

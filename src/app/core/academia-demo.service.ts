@@ -1,109 +1,34 @@
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { CATEGORIAS_DEMO, CURSOS_DEMO } from './demo-catalog';
+import { Injectable, signal } from '@angular/core';
 import { Categoria, Curso, Matricula, Pago } from './academia.models';
 
-@Injectable({ providedIn: 'root' })
+/**
+ * Compatibilidad con los formularios antiguos. El modo DEMO está retirado:
+ * todos los datos visibles proceden de los microservicios.
+ * Los fixtures de src/app/core/demo-catalog.ts solo se conservan para
+ * pruebas del sistema, sin cargarse jamás en una sesión del navegador.
+ */
+@Injectable({providedIn:'root'})
 export class AcademiaDemoService {
-  private platformId = inject(PLATFORM_ID);
-  readonly modo = signal<'demo' | 'api'>('demo');
-  readonly perfilDemo = signal<'estudiante' | 'administrador'>('estudiante');
-  readonly cursos = signal<Curso[]>([...CURSOS_DEMO]);
-  readonly categorias = signal<Categoria[]>([...CATEGORIAS_DEMO]);
-  readonly matriculas = signal<Matricula[]>([]);
-  readonly pagos = signal<Pago[]>([]);
+  private readonly _modo=signal<'demo'|'api'>('api');
+  readonly modo=this._modo.asReadonly();
+  readonly cursos=signal<Curso[]>([]);
+  readonly categorias=signal<Categoria[]>([]);
+  readonly matriculas=signal<Matricula[]>([]);
+  readonly pagos=signal<Pago[]>([]);
+  readonly perfilDemo=signal<'estudiante'|'administrador'>('estudiante');
 
-  constructor() {
-    if (!isPlatformBrowser(this.platformId)) return;
-    const queryMode = new URLSearchParams(window.location.search).get('modo');
-    const selectedMode = queryMode === 'demo' || queryMode === 'api'
-      ? queryMode
-      : (localStorage.getItem('myacademy-modo') === 'api' ? 'api' : 'demo');
-    this.modo.set(selectedMode);
-    if (queryMode === 'demo' || queryMode === 'api') {
-      localStorage.setItem('myacademy-modo', selectedMode);
-    }
-    this.perfilDemo.set(localStorage.getItem('myacademy-perfil-demo')==='administrador'?'administrador':'estudiante');
-    const anteriores = this.leer<Curso[]>('myacademy-cursos', []);
-    // Mantener altas/ediciones del usuario sin perder los nuevos cursos demo.
-    const porId = new Map<string, Curso>();
-    for (const base of CURSOS_DEMO) porId.set(base.id, base);
-    for (const anterior of anteriores) {
-      const actual = porId.get(anterior.id);
-      const modalidad = anterior.modality === ('PRESENTIAL' as any) ? 'IN_PERSON' : anterior.modality;
-      const estado = (['DRAFT','PUBLISHED','CANCELLED','COMPLETED'] as string[]).includes(anterior.status)
-        ? anterior.status : 'DRAFT';
-      porId.set(anterior.id, { ...actual, ...anterior, modality: modalidad as Curso['modality'],
-        status: estado as Curso['status'], imageUrl: anterior.imageUrl || actual?.imageUrl,
-        schedules: anterior.schedules || actual?.schedules || [],
-        locations: anterior.locations || actual?.locations || [] });
-    }
-    this.cursos.set([...porId.values()]);
-    const anterioresCategorias = this.leer<Categoria[]>('myacademy-categorias', []);
-    const categorias = new Map<string, Categoria>(CATEGORIAS_DEMO.map(c=>[c.id,c]));
-    for (const cat of anterioresCategorias) categorias.set(cat.id,cat);
-    this.categorias.set([...categorias.values()]);
-    this.matriculas.set(this.leer('myacademy-matriculas', []));
-    this.pagos.set(this.leer('myacademy-pagos', []));
+  establecerModo(_modo:'demo'|'api'):void {
+    // La aplicación ya no permite alternar a datos falsos.
+    this._modo.set('api');
   }
-  private leer<T>(clave: string, base: T): T {
-    try { const raw = localStorage.getItem(clave); return raw ? JSON.parse(raw) as T : structuredClone(base); }
-    catch { return structuredClone(base); }
+  establecerPerfilDemo(_perfil:'estudiante'|'administrador'):void {
+    throw new Error('Los perfiles de demostración han sido retirados. Inicia sesión con Keycloak.');
   }
-  private guardar(clave: string, valor: unknown): void {
-    if (isPlatformBrowser(this.platformId)) localStorage.setItem(clave, JSON.stringify(valor));
-  }
-  establecerModo(modo: 'demo' | 'api'): void {
-    this.modo.set(modo);
-    this.guardar('myacademy-modo', modo);
-  }
-  establecerPerfilDemo(perfil:'estudiante'|'administrador'):void {
-    this.perfilDemo.set(perfil);
-    this.guardar('myacademy-perfil-demo', perfil);
-  }
-  registrarCurso(data: Curso): void {
-    const arr = [...this.cursos(), data];
-    this.cursos.set(arr);
-    this.guardar('myacademy-cursos', arr);
-  }
-  actualizarCurso(id: string, cambios: Partial<Curso>): void {
-    const arr = this.cursos().map(c => c.id === id ? { ...c, ...cambios } : c);
-    this.cursos.set(arr);
-    this.guardar('myacademy-cursos', arr);
-  }
-  registrarCategoria(data: Categoria): void {
-    const arr = [...this.categorias(), data];
-    this.categorias.set(arr);
-    this.guardar('myacademy-categorias', arr);
-  }
-  actualizarCategoria(id: string, cambios: Partial<Categoria>): void {
-    const arr = this.categorias().map(c => c.id === id ? { ...c, ...cambios } : c);
-    this.categorias.set(arr);
-    this.guardar('myacademy-categorias', arr);
-    // Actualiza la asociación anidada de los cursos: evita mostrar el nombre antiguo.
-    const actualizada = arr.find(c=>c.id===id);
-    if (actualizada) {
-      const cursos = this.cursos().map(c=>c.categoryId===id
-        ? { ...c, categories:[actualizada] } : c);
-      this.cursos.set(cursos);
-      this.guardar('myacademy-cursos', cursos);
-    }
-  }
-  registrarMatricula(data: Matricula): void {
-    const arr = [data, ...this.matriculas()];
-    this.matriculas.set(arr);
-    this.guardar('myacademy-matriculas', arr);
-  }
-  registrarPago(monto: number): Pago {
-    const pago: Pago = { id: Date.now(), monto, estado: 'EN_PROCESO' };
-    const arr = [pago, ...this.pagos()];
-    this.pagos.set(arr);
-    this.guardar('myacademy-pagos', arr);
-    return pago;
-  }
-  actualizarPago(id: number, estado: Pago['estado']): void {
-    const arr = this.pagos().map(p => p.id === id ? { ...p, estado } : p);
-    this.pagos.set(arr);
-    this.guardar('myacademy-pagos', arr);
-  }
+  registrarCurso(_item:Curso):void {throw new Error('Utiliza la API de Catálogo.');}
+  actualizarCurso(_id:string,_cambios:Partial<Curso>):void {throw new Error('Utiliza la API de Catálogo.');}
+  registrarCategoria(_item:Categoria):void {throw new Error('Utiliza la API de Catálogo.');}
+  actualizarCategoria(_id:string,_cambios:Partial<Categoria>):void {throw new Error('Utiliza la API de Catálogo.');}
+  registrarMatricula(_item:Matricula):void {throw new Error('Utiliza la API de Matrículas.');}
+  registrarPago(_monto:number):Pago {throw new Error('Utiliza la API de Pagos.');}
+  actualizarPago(_id:number,_estado:Pago['estado']):void {throw new Error('Utiliza la API de Pagos.');}
 }

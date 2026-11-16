@@ -101,7 +101,6 @@ import { portadaCurso } from '../../core/course-cover';
         <label class="filter-check"><input type="checkbox" [ngModel]="soloCupos()" (ngModelChange)="soloCupos.set($event)"> Con cupos</label>
         <button class="clear-filters" (click)="limpiar()">Limpiar filtros</button>
       </div>
-      @if (demo.modo()==='demo') { <p class="mode-note">Catálogo de demostración. Los cursos y precios son ejemplos académicos.</p> }
       @if (cargando()) { <div class="empty-state">Buscando cursos disponibles…</div> }
       @if (error()) { <div class="error-banner" role="alert">{{ error() }} <a routerLink="/gestion/integraciones">Revisar conexiones</a></div> }
       @if (!cargando()) {
@@ -112,7 +111,7 @@ import { portadaCurso } from '../../core/course-cover';
             <div class="empty-state"><strong>No encontramos cursos con esos filtros.</strong><span>Prueba otra búsqueda o cambia de categoría.</span><button class="btn-outline" (click)="limpiar()">Mostrar todos</button></div>
           }
         </div>
-        @if (totalPaginas()>1 && demo.modo()==='api') {
+        @if (totalPaginas()>1) {
           <div class="pagination"><button [disabled]="pagina()===0" (click)="cambiarPagina(-1)">Anterior</button><span>Página {{ pagina()+1 }} de {{ totalPaginas() }}</span><button [disabled]="pagina()+1>=totalPaginas()" (click)="cambiarPagina(1)">Siguiente</button></div>
         }
       }
@@ -151,7 +150,7 @@ import { portadaCurso } from '../../core/course-cover';
               }
             </section>
           </div>
-          <aside class="detail-buy"><div class="detail-visual"><img [src]="portadaCurso(curso)" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>Inscripción de prueba mientras no exista API de matrículas.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
+          <aside class="detail-buy"><div class="detail-visual"><img [src]="portadaCurso(curso)" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>La matrícula requiere una cuenta de estudiante y disponibilidad del servicio.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
         </div>
       }
     </section>
@@ -183,43 +182,35 @@ export class CatalogoAvanzado implements OnInit {
   readonly pagina = signal(0);
   readonly totalPaginas = signal(1);
   private busquedas = new Subject<string>();
-  readonly categorias = computed(() => this.demo.modo()==='demo' ? this.demo.categorias().filter(c=>c.status==='ACTIVE') : this.categoriasApi());
+  readonly categorias = computed(() => this.categoriasApi());
   readonly categoriasPrincipales = computed(() => this.mostrarTodasCategorias() ? this.categorias() : this.categorias().slice(0,6));
   readonly cursosVisibles = computed(() => {
     const q = this.consulta().trim().toLowerCase();
     const modo = this.modalidad();
     const cat = this.categoriaSeleccionada();
     const limit = this.precioMax();
-    const selected = (this.demo.modo()==='demo' ? this.demo.cursos() : this.cursosApi())
+    const selected = this.cursosApi()
       .filter(c => c.status === 'PUBLISHED')
-      .filter(c => this.demo.modo()==='api' || !cat || c.categoryId===cat || c.categories?.some(x=>x.id===cat))
-      .filter(c => this.demo.modo()==='api' || !q || [c.name,c.code,c.description||''].join(' ').toLowerCase().includes(q))
+      .filter(c => !cat || c.categoryId===cat || c.categories?.some(x=>x.id===cat))
+      .filter(c => !q || [c.name,c.code,c.description||''].join(' ').toLowerCase().includes(q))
       .filter(c => !modo || c.modality===modo)
       .filter(c => !limit || c.price<=limit)
       .filter(c => !this.soloCupos() || c.availableSlots>0);
     const sort = this.orden();
     return [...selected].sort((a,b) => sort==='precio-asc' ? a.price-b.price : sort==='precio-desc' ? b.price-a.price : sort==='nombre' ? a.name.localeCompare(b.name) : 0);
   });
-  readonly cantidadTotal = computed(() => this.demo.modo()==='demo' ? this.demo.cursos().filter(c=>c.status==='PUBLISHED').length : this.cursosApi().length);
+  readonly cantidadTotal = computed(() => this.cursosApi().length);
 
   ngOnInit(): void {
     this.busquedas.pipe(
       debounceTime(280),distinctUntilChanged(),
-      switchMap(text => this.demo.modo()==='api' && text.length>=2
+      switchMap(text => text.length>=2
         ? this.api.sugerencias(text,6).pipe(catchError(()=>of([] as Sugerencia[])))
         : of([] as Sugerencia[])),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(v=>this.sugerencias.set(v));
     if(this.vista==='detalle'){
       const id=this.route.snapshot.paramMap.get('id')||'';
-      if(this.demo.modo()==='demo') {
-        const curso=this.demo.cursos().find(c=>c.id===id && c.status==='PUBLISHED')||null;
-        this.detalle.set(curso);
-        if(!curso)this.error.set('El curso no está disponible para estudiantes.');
-        this.horarios.set(curso?.schedules||[]);
-        this.sedes.set(curso?.locations||[]);
-      }
-      else {
         this.cargando.set(true);
         this.api.curso(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: c=>{this.detalle.set(c.status==='PUBLISHED'?c:null);if(c.status!=='PUBLISHED')this.error.set('El curso no está publicado.');this.cargando.set(false);},
@@ -227,8 +218,7 @@ export class CatalogoAvanzado implements OnInit {
         });
         this.api.horarios(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:p=>this.horarios.set(p.content),error:()=>{}});
         this.api.sedes(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:p=>this.sedes.set(p.content),error:()=>{}});
-      }
-    } else if(this.demo.modo()==='api') {
+    } else {
       this.cargarCategorias();this.cargarCursos();
     }
   }
@@ -245,18 +235,18 @@ export class CatalogoAvanzado implements OnInit {
   buscarRapido(text: string):void {this.escribirBusqueda(text);this.ejecutarBusqueda();}
   ejecutarBusqueda(): void {
     this.sugerencias.set([]);this.pagina.set(0);
-    if(this.demo.modo()==='api')this.cargarCursos();
+    this.cargarCursos();
     if(typeof document!=='undefined')document.getElementById('cursos')?.scrollIntoView({behavior:'smooth'});
   }
   elegirCategoria(id: string): void {
     this.categoriaSeleccionada.set(id);this.pagina.set(0);
-    if(this.demo.modo()==='api') this.cargarCursos();
+    this.cargarCursos();
     if(typeof document!=='undefined')document.getElementById('cursos')?.scrollIntoView({behavior:'smooth'});
   }
   limpiar(): void {
     this.consulta.set('');this.categoriaSeleccionada.set('');this.modalidad.set('');
     this.precioMax.set(0);this.soloCupos.set(false);this.orden.set('relevancia');this.pagina.set(0);
-    if(this.demo.modo()==='api')this.cargarCursos();
+    this.cargarCursos();
   }
   cambiarPagina(d: number):void {this.pagina.update(p=>Math.max(0,Math.min(this.totalPaginas()-1,p+d)));this.cargarCursos();}
   private cargarCategorias():void {
@@ -280,7 +270,7 @@ export class CatalogoAvanzado implements OnInit {
         this.cursosApi.set(cat && q ? items.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())) : items);
         this.totalPaginas.set(Math.max(1,page.totalPages));this.cargando.set(false);
       },
-      error:()=>{this.cursosApi.set([]);this.error.set('No hay conexión con el catálogo. Inicia el microservicio o activa el modo demostración desde Conexiones.');this.cargando.set(false);}
+      error:()=>{this.cursosApi.set([]);this.error.set('Catálogo no responde. Verifica el microservicio, Elasticsearch y el Indexer.');this.cargando.set(false);}
     });
   }
 }

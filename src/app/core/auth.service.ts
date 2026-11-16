@@ -32,7 +32,10 @@ export class AuthService {
       return;
     }
     if (this.startPromise) return this.startPromise;
-    this.startPromise = this.iniciarNavegador();
+    this.startPromise = this.iniciarNavegador().finally(() => {
+      // Si falló, reintentar cuando el usuario encienda Keycloak sin recargar Angular.
+      if (this.estado() === 'sin-conexion') this.startPromise = null;
+    });
     return this.startPromise;
   }
 

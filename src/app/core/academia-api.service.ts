@@ -5,7 +5,7 @@ import { Categoria, Curso, DiagnosticoApi, Horario, PageResult, Pago, Matricula,
 
 /**
  * Contratos contrastados con los controladores Java de Catalogo-Cursos-Publico-1A
- * y Estados_de_Pago. El microservicio Matricula-Publico_1E aún no ofrece API HTTP.
+ * y Estados_de_Pago. Matrículas utiliza el adaptador REST local, a integrar por el equipo.
  */
 @Injectable({ providedIn: 'root' })
 export class AcademiaApiService {
@@ -114,6 +114,10 @@ export class AcademiaApiService {
   }
   listarMatriculasAdmin(): Observable<Matricula[]> {
     return this.http.get<Matricula[]>('/api/matriculas/admin');
+  }
+  /** Health del Indexer desarrollado por Joker: consume eventos Kafka y escribe en Elasticsearch. */
+  estadoIndexer(): Observable<{status:string;components?:Record<string,{status:string}>}> {
+    return this.http.get<{status:string;components?:Record<string,{status:string}>}>('/api/indexer/health');
   }
   listarPagos(): Observable<Pago[]> { return this.http.get<Pago[]>(this.pagos); }
   pago(id: number): Observable<Pago> { return this.http.get<Pago>(`${this.pagos}/${id}`); }

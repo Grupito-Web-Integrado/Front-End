@@ -21,7 +21,7 @@ import { portadaCurso } from '../../core/course-cover';
     @if (mensaje()) { <div class="success-banner" role="status">{{ mensaje() }}</div> }
     @if (curso(); as c) {
       <div class="workspace-heading">
-        <div><span class="section-overline">ADMINISTRACIÓN · {{ demo.modo()==='demo'?'DEMOSTRACIÓN':'API REAL' }}</span>
+        <div><span class="section-overline">ADMINISTRACIÓN · API DE CATÁLOGO</span>
           <h1>{{ c.name }}</h1>
           <p>Código {{ c.code }} · <span class="status-pill">{{ c.status }}</span></p>
         </div>
@@ -91,14 +91,7 @@ import { portadaCurso } from '../../core/course-cover';
           <div class="form-card">
             <h2>Imagen de portada</h2>
             <img class="editor-cover" [src]="edicion.imageUrl || portadaCurso(c)" [alt]="'Portada de '+c.name">
-            <label class="form-field"><span>URL de imagen (solo demostración)</span>
-              <input name="imageUrl" [(ngModel)]="edicion.imageUrl" [disabled]="demo.modo()==='api'" placeholder="/course-covers/area-0.svg">
-            </label>
-            @if(demo.modo()==='demo'){
-              <button class="btn-outline" (click)="guardarImagen()">Guardar portada demo</button>
-            } @else {
-              <p class="mode-note">La API de Catálogo aún no tiene campo de imagen ni endpoint para subir portadas.</p>
-            }
+            <p class="mode-note">La portada actual es ilustrativa. La API de Catálogo no expone todavía carga ni persistencia de imágenes.</p>
           </div>
           <div class="form-card">
             <h2>Estado y publicación</h2>
