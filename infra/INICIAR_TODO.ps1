@@ -14,7 +14,7 @@ foreach($cmd in @('git','docker','java')){
   if(-not(Get-Command $cmd -ErrorAction SilentlyContinue)){throw "Para API se necesita $cmd."}
 }
 $javaInfo=(& java --version | Out-String)
-if($javaInfo -notmatch 'version "21[\."]'){
+if($javaInfo -notmatch '(?im)^(?:openjdk|java)\s+(?:version\s+)?"?21(?:\.|\s|"|$)'){
   throw "API requiere Java JDK 21. Detectado: $javaInfo"
 }
 $required=@(
