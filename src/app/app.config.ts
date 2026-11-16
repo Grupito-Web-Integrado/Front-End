@@ -1,29 +1,13 @@
-import { APP_INITIALIZER, ApplicationConfig, PLATFORM_ID, inject } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { isPlatformBrowser } from '@angular/common';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import { routes } from './app.routes';
-import { keycloak } from './core/keycloak.config';
 
-function initializeKeycloak() {
-  const platformId = inject(PLATFORM_ID);
-  return () => {
-    if (isPlatformBrowser(platformId)) {
-      return keycloak.init({
-        onLoad: 'check-sso',
-        checkLoginIframe: false
-      });
-    }
-    return Promise.resolve();
-  };
-}
-
+// Keycloak requires a real realm/client and is deliberately not initialized with placeholder values.
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideZoneChangeDetection({ eventCoalescing:true }),
     provideRouter(routes),
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeKeycloak,
-      multi: true
-    }
+    provideHttpClient(withFetch())
   ]
 };

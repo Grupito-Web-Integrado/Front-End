@@ -1,2 +1,1 @@
-/* Root app styles are minimal; global styles live in src/styles.scss */
-main{padding:20px}
+:host{display:block;min-height:100vh}main{min-height:55vh}

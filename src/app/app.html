@@ -1,14 +1,29 @@
-<header class="app-header">
-	<div class="brand">
-		<h1>MyAcademy</h1>
-		<div class="tag">Plataforma de Cursos - Premium</div>
-	</div>
-	<nav class="nav-links">
-		<a routerLink="/catalogo">Catálogo</a>
-		<a routerLink="/matricula/1">Matricular</a>
-		<a routerLink="/confirmacion">Confirmación</a>
-		<a routerLink="/login">Login</a>
-	</nav>
+<header class="site-header">
+  <div class="shell nav-shell">
+    <a class="site-logo" routerLink="/inicio" aria-label="Ir al inicio de MyAcademy"><span class="logo-icon">M<span>✦</span></span><span>my<span class="logo-emphasis">academy</span></span></a>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a routerLink="/inicio" routerLinkActive="active">Inicio</a>
+      <a routerLink="/catalogo" routerLinkActive="active">Cursos</a>
+      <a routerLink="/mis-matriculas" routerLinkActive="active">Mis matrículas</a>
+      <a routerLink="/pagos" routerLinkActive="active">Pagos</a>
+      <div class="nav-dropdown"><span>Gestión ▾</span>
+        <div class="nav-dropdown-items">
+          <a routerLink="/gestion/cursos">Administrar cursos</a>
+          <a routerLink="/gestion/categorias">Categorías</a>
+          <a routerLink="/gestion/horarios">Horarios</a>
+          <a routerLink="/gestion/sedes">Sedes</a>
+          <a routerLink="/gestion/estudiantes">Estudiantes</a>
+          <a routerLink="/gestion/integraciones">Conexiones API</a>
+        </div>
+      </div>
+    </nav>
+    <div class="header-actions"><a class="api-chip" routerLink="/gestion/integraciones">{{ demo.modo()==='demo' ? '◉ DEMO' : '● API' }}</a><a class="nav-cta" routerLink="/login">Mi cuenta <span>↗</span></a></div>
+  </div>
 </header>
-
-<router-outlet></router-outlet>
+<main><router-outlet /></main>
+<footer class="site-footer"><div class="shell footer-main">
+  <div><a class="site-logo" routerLink="/inicio"><span class="logo-icon">M<span>✦</span></span><span>my<span class="logo-emphasis">academy</span></span></a><p>Un espacio para descubrir, aprender y construir nuevas oportunidades.</p></div>
+  <div><h3>Aprender</h3><a routerLink="/catalogo">Todos los cursos</a><a routerLink="/mis-matriculas">Mis matrículas</a></div>
+  <div><h3>Gestión</h3><a routerLink="/gestion/cursos">Cursos</a><a routerLink="/gestion/categorias">Categorías</a><a routerLink="/gestion/integraciones">Estado de servicios</a></div>
+  <div><h3>Acerca de</h3><p>Proyecto académico de Desarrollo Web Integrado. Los cursos de demostración no representan una oferta real.</p></div>
+</div><div class="shell footer-bottom"><span>© 2026 MyAcademy · Proyecto académico</span><span>Diseñado para aprender, creado para crecer.</span></div></footer>

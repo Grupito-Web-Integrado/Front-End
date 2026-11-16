@@ -1,0 +1,23 @@
+name: Angular frontend CI
+on:
+  push:
+    branches:
+      - feat/dwi-frontend-gonzalo
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig*.json'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.5'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build

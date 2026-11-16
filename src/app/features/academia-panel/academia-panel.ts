@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
+import { from, concatMap, toArray } from 'rxjs';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -253,14 +254,10 @@ export class AcademiaPanel implements OnInit {
       ...(this.editarPrecio!==c.price?[this.api.cambiarPrecioCurso(c.id,this.editarPrecio)]:[])
     ];
     if(cambios.length===0){this.ok('No hay cambios para guardar.');return;}
-    import('rxjs').then(({concat,from})=>{
-      from(cambios).pipe(import('rxjs') as never);
-    }).catch(()=>{});
-    // Cada PATCH es independiente. Los errores se muestran de forma explícita.
-    let pendientes=cambios.length,errores=0;
-    for(const req of cambios)req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:()=>{pendientes--;if(pendientes===0){this.ok(errores?'Se guardaron algunos campos; revisa errores.':'Curso actualizado.');this.cargarCursos();this.cursoEditando.set(null);}},
-      error:()=>{errores++;pendientes--;this.error.set('Falló la actualización de '+errores+' campo(s).');if(pendientes===0)this.cargarCursos();}
+    // Los comandos modifican la misma entidad: se procesan uno a uno.
+    from(cambios).pipe(concatMap(req=>req),toArray(),takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:()=>{this.ok('Curso actualizado.');this.cargarCursos();this.cursoEditando.set(null);},
+      error:e=>this.fallo(e)
     });
   }
   cambiarEstadoCurso(c:Curso, accion:'publish'|'cancel'|'complete'):void{
@@ -282,8 +279,10 @@ export class AcademiaPanel implements OnInit {
     const reqs=[...(c.name!==this.editarNombre?[this.api.renombrarCategoria(c.id,this.editarNombre)]:[]),
       ...((c.description||'')!==this.editarDescripcion?[this.api.descripcionCategoria(c.id,this.editarDescripcion)]:[])];
     if(reqs.length===0){this.ok('Sin cambios.');return;}
-    let pending=reqs.length;
-    for(const req of reqs)req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:()=>{if(--pending===0){this.ok('Categoría actualizada.');this.cargarCategorias();this.categoriaEditando.set(null);}},error:e=>this.fallo(e)});
+    from(reqs).pipe(concatMap(req=>req),toArray(),takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:()=>{this.ok('Categoría actualizada.');this.cargarCategorias();this.categoriaEditando.set(null);},
+      error:e=>this.fallo(e)
+    });
   }
   alternarCategoria(c:Categoria):void{
     if(this.demo.modo()==='demo'){this.demo.actualizarCategoria(c.id,{status:c.status==='ACTIVE'?'INACTIVE':'ACTIVE'});this.ok('Categoría demo actualizada.');return;}
