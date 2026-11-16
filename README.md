@@ -35,3 +35,46 @@ La ruta `/gestion/integraciones` permite cambiar manualmente entre datos simulad
 Los nombres, precios y cursos demo son ficticios. Las solicitudes de pago del servicio Java registran estados, pero **no realizan cobros bancarios**. No almacenar información real de estudiantes en el modo demo (usa localStorage). Antes de desplegar: pruebas end-to-end, control de acceso, privacidad, manejo de errores, validación de CORS/puertos y revisión de los microservicios.
 
 La rama del equipo `feat/premium-frontend` no se modifica directamente. Integrar mediante Pull Request.
+
+## Avance: curso como unidad funcional
+
+La estructura de la plataforma separa las pantallas por rol:
+
+- **Vista estudiante:** `/curso/:id`. Solo se muestran cursos `PUBLISHED`. Incluye portada, descripción, modalidad, cupos, fechas, horarios y sedes del backend.
+- **Vista administrador:** `/gestion/cursos/:id`. Edición de datos, publicación/cancelación/finalización, y gestión de horarios y sedes **asociados al curso**.
+- **Categorías:** las once categorías de demostración pueden crearse/editarse; el encabezado público enseña **como máximo seis** inicialmente y permite desplegar las demás. En modo API se recuperan todas las páginas de `/api/v1/course-categories/active`.
+- **Imágenes:** SVGs propios bajo `public/course-covers` y campo `imageUrl` exclusivo de demostración. El DTO Java no incorpora imagen; hace falta ampliar el backend para guardar una portada real.
+
+`CourseStatus` contiene `DRAFT`, `PUBLISHED`, `CANCELLED` y `COMPLETED`. Modalidad presencial se serializa como `IN_PERSON`.
+
+### Probar ambos perfiles en modo demostración
+
+1. Abre `http://localhost:4200/login`.
+2. Selecciona **Vista estudiante** para el catálogo y matrículas de prueba.
+3. Selecciona **Vista administrador** para habilitar el menú de gestión y editar `/gestion/cursos`.
+4. Ninguno de estos perfiles ficticios otorga derechos reales en los microservicios.
+
+### Poner en marcha la infraestructura
+
+```powershell
+.\infra\INICIAR_TODO.ps1
+```
+
+Este comando necesita Docker Desktop, Git, Java 21, fnm/Node.js 22.23.5 y puertos libres. Consulta `docs/INFRA_Y_KEYCLOAK.md`. Los scripts inicializan índices de Elasticsearch que Catálogo necesita para devolver datos en lugar de error 500 por índice inexistente. No reinicies ni elimines los volúmenes de tus compañeros.
+
+Para ver el estado del backend:
+
+```powershell
+.\infra\VERIFICAR.ps1
+```
+
+En el navegador, entra en `/gestion/integraciones` y selecciona modo API una vez que los servidores respondan. El endpoint real de Matrículas todavía no existe; las matrículas demo se conservan únicamente en el navegador.
+
+### Pruebas automáticas
+
+- `npm run test:smoke`
+- `npx ng test --watch=false --include=src/app/core/academia-api.service.spec.ts`
+- `npm run build`
+- GitHub Actions: `angular-ci.yml`, `catalog-integration-ci.yml`, `keycloak-smoke-ci.yml`.
+
+**No fusionar a producción** sin revisar seguridad backend, migraciones, indexador Kafka y pruebas E2E.
