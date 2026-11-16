@@ -23,6 +23,17 @@ jobs:
       - run: npm run test:smoke
       - run: npx ng test --watch=false --include=src/app/core/academia-api.service.spec.ts
       - run: npm run build
+      - name: Validate PowerShell scripts syntax
+        shell: pwsh
+        run: |
+          Get-ChildItem infra -Filter '*.ps1' | ForEach-Object {
+            $tokens = $null; $issues = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$issues) | Out-Null
+            if ($issues.Count -gt 0) {
+              $issues | ForEach-Object { Write-Error "$($_.Message) [$($_.Extent.File):$($_.Extent.StartLineNumber)]" }
+              exit 1
+            }
+          }
       - name: Validate Docker Compose
         run: |
           cp infra/.env.example infra/.env
