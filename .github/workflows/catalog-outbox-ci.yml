@@ -25,6 +25,9 @@ jobs:
           cp integrations/catalogo-outbox/SpringDataOutboxRepository.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/repository/
           cp integrations/catalogo-outbox/OutboxEventPublisherImpl.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/outbox/publisher/
           cp integrations/catalogo-outbox/OutboxKafkaConfig.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/outbox/publisher/
+          cp integrations/catalogo-outbox/CourseElasticsearchRepositoryImpl.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/output/search/elastic/adapter/
+          cp integrations/catalogo-outbox/CourseCreatedEvent.java catalogo/src/main/java/com/example/Catalogo_Cursos/domain/model/course/event/
+          cp integrations/catalogo-outbox/Course.java catalogo/src/main/java/com/example/Catalogo_Cursos/domain/model/course/
       - name: Compile catalog with JDK21
         run: |
           cd catalogo

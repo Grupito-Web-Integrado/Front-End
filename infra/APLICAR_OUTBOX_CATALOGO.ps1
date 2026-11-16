@@ -14,7 +14,10 @@ $mapping=@(
  @{source='V3__fix_outbox_and_modalities.sql';dest='src\main\resources\db\migration\V3__fix_outbox_and_modalities.sql'},
  @{source='SpringDataOutboxRepository.java';dest='src\main\java\com\example\Catalogo_Cursos\infrastructure\input\rest\repository\SpringDataOutboxRepository.java'},
  @{source='OutboxEventPublisherImpl.java';dest='src\main\java\com\example\Catalogo_Cursos\infrastructure\input\rest\outbox\publisher\OutboxEventPublisherImpl.java'},
- @{source='OutboxKafkaConfig.java';dest='src\main\java\com\example\Catalogo_Cursos\infrastructure\input\rest\outbox\publisher\OutboxKafkaConfig.java'}
+ @{source='OutboxKafkaConfig.java';dest='src\main\java\com\example\Catalogo_Cursos\infrastructure\input\rest\outbox\publisher\OutboxKafkaConfig.java'},
+ @{source='CourseElasticsearchRepositoryImpl.java';dest='src\main\java\com\example\Catalogo_Cursos\infrastructure\output\search\elastic\adapter\CourseElasticsearchRepositoryImpl.java'},
+ @{source='CourseCreatedEvent.java';dest='src\main\java\com\example\Catalogo_Cursos\domain\model\course\event\CourseCreatedEvent.java'},
+ @{source='Course.java';dest='src\main\java\com\example\Catalogo_Cursos\domain\model\course\Course.java'}
 )
 $backup=Join-Path (Split-Path $repo -Parent) ('respaldo-outbox-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Force -Path $backup | Out-Null
