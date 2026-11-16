@@ -47,6 +47,8 @@ switch($Servicio) {
     $env:SPRING_FLYWAY_USER='admin'
     $env:SPRING_FLYWAY_PASSWORD=$cfg['MATRICULA_DB_PASSWORD']
     $env:SPRING_KAFKA_BOOTSTRAP_SERVERS='localhost:9092'
+    $env:SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI='http://localhost:8180/realms/myacademy'
+    $env:SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI='http://localhost:8180/realms/myacademy/protocol/openid-connect/certs'
   }
   'pagos' {
     $env:SERVER_PORT='8081'

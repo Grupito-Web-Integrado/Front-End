@@ -26,7 +26,7 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
         <div class="form-layout">
           <form class="form-card" (ngSubmit)="registrarMatricula()">
             <h2>Datos del estudiante</h2>
-            <p class="mode-note">Esta matrícula se guarda únicamente en el navegador. El microservicio de matrículas no ofrece todavía endpoints HTTP.</p>
+            <p class="mode-note">{{ demo.modo()==='demo' ? 'Matrícula de demostración, guardada en este navegador.' : 'Solicitud al microservicio de Matrículas; el pago y la reserva definitiva de cupos todavía no están integrados.' }}</p>
             <div class="form-grid">
               <label class="form-field wide"><span>Nombre completo *</span><input name="nombre" [(ngModel)]="formMatricula.nombre" required minlength="3" placeholder="Nombres y apellidos"></label>
               <label class="form-field"><span>Correo electrónico *</span><input name="correo" type="email" [(ngModel)]="formMatricula.correo" required placeholder="correo@ejemplo.com"></label>
@@ -34,20 +34,20 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
               <label class="form-field"><span>Tipo de documento</span><select name="tipoDoc" [(ngModel)]="formMatricula.tipoDocumento"><option>DNI</option><option>CE</option><option>PASAPORTE</option></select></label>
               <label class="form-field"><span>Número de documento *</span><input name="documento" [(ngModel)]="formMatricula.documento" required placeholder="Documento de identidad"></label>
             </div>
-            <button class="btn-primary" type="submit">Registrar matrícula de prueba ↗</button>
+            <button class="btn-primary" type="submit">{{ demo.modo()==='demo' ? 'Registrar matrícula de prueba' : 'Solicitar matrícula' }} ↗</button>
           </form>
           <aside class="summary-card"><span class="section-overline">TU ELECCIÓN</span><h2>{{ curso.name }}</h2><p>{{ curso.modality }} · {{ curso.durationHours || '—' }} horas</p><div class="divider-line"></div><div class="total-row"><span>Importe</span><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><small>No se realizará ningún cobro real.</small></aside>
         </div>
       } @else { <div class="empty-state">No se encontró el curso. <a routerLink="/catalogo">Volver a buscar</a></div> }
     }
     @if (vista==='confirmacion') {
-      <div class="form-card confirmation-box"><span class="big-check">✓</span><h2>Matrícula demo registrada</h2><p>El registro se guardó en este navegador. No existe confirmación del servidor ni reserva real de cupo.</p><a class="btn-primary" routerLink="/mis-matriculas">Ver mis matrículas</a></div>
+      <div class="form-card confirmation-box"><span class="big-check">✓</span><h2>{{ demo.modo()==='demo'?'Matrícula demo registrada':'Solicitud de matrícula registrada' }}</h2><p>{{ demo.modo()==='demo'?'Registro guardado en este navegador.':'La solicitud fue almacenada en PostgreSQL. El pago y la reserva definitiva de cupos no se han realizado.' }}</p><a class="btn-primary" routerLink="/mis-matriculas">Ver mis matrículas</a></div>
     }
     @if (vista==='matriculas' || vista==='estudiantes') {
       <div class="table-card"><div class="table-heading"><h2>{{ vista==='estudiantes'?'Estudiantes registrados (demo)':'Historial de matrículas' }}</h2><button class="btn-outline" (click)="exportarMatriculas()">Exportar CSV</button></div>
         <div class="table-scroll"><table><thead><tr><th>Estudiante</th><th>Documento</th><th>Curso</th><th>Fecha</th><th>Importe</th><th>Estado</th></tr></thead><tbody>
-        @for (m of demo.matriculas(); track m.id) { <tr><td><strong>{{m.nombre}}</strong><small>{{m.correo}}</small></td><td>{{m.tipoDocumento}} {{m.documento}}</td><td>{{m.courseName}}</td><td>{{m.fecha | date:'short'}}</td><td>S/ {{m.importe | number:'1.2-2'}}</td><td><span class="status-pill">{{m.estado}}</span></td></tr> }
-        @if (demo.matriculas().length===0) { <tr><td colspan="6" class="table-empty">Todavía no hay matrículas de demostración.</td></tr> }
+        @for (m of matriculasVisibles(); track m.id) { <tr><td><strong>{{m.nombre}}</strong><small>{{m.correo}}</small></td><td>{{m.tipoDocumento}} {{m.documento}}</td><td>{{m.courseName}}</td><td>{{m.fecha | date:'short'}}</td><td>S/ {{m.importe | number:'1.2-2'}}</td><td><span class="status-pill">{{m.estado}}</span></td></tr> }
+        @if (matriculasVisibles().length===0) { <tr><td colspan="6" class="table-empty">No hay matrículas registradas con este perfil.</td></tr> }
         </tbody></table></div>
       </div>
     }
@@ -171,6 +171,7 @@ export class AcademiaPanel implements OnInit {
   readonly vista: string=this.route.snapshot.data['vista']||'matriculas';
   readonly error=signal(''); readonly mensaje=signal(''); readonly cargando=signal(false);
   readonly cursosApi=signal<Curso[]>([]); readonly categoriasApi=signal<Categoria[]>([]);
+  readonly matriculasApi=signal<Matricula[]>([]);
   readonly pagosApi=signal<Pago[]>([]); readonly horarios=signal<Horario[]>([]); readonly sedes=signal<Sede[]>([]);
   readonly cursoActual=signal<Curso|null>(null); readonly cursoEditando=signal<Curso|null>(null);
   readonly categoriaEditando=signal<Categoria|null>(null); readonly cursoSeleccionado=signal('');
@@ -190,6 +191,7 @@ export class AcademiaPanel implements OnInit {
   editarNombre='';editarDescripcion='';editarPrecio=0;
   cursosVisibles():Curso[]{return this.demo.modo()==='demo'?this.demo.cursos():this.cursosApi();}
   categoriasVisibles():Categoria[]{return this.demo.modo()==='demo'?this.demo.categorias():this.categoriasApi();}
+  matriculasVisibles():Matricula[]{return this.demo.modo()==='demo'?this.demo.matriculas():this.matriculasApi();}
   pagosVisibles():Pago[]{return this.demo.modo()==='demo'?this.demo.pagos():this.pagosApi();}
   titulo():string{return ({matricula:'Formaliza tu matrícula',confirmacion:'Confirmación',matriculas:'Mis matrículas',estudiantes:'Estudiantes',pagos:'Gestión de pagos',cursos:'Administrar cursos',categorias:'Categorías',horarios:'Horarios',sedes:'Sedes',integraciones:'Conexiones API'} as Record<string,string>)[this.vista]||'Mi espacio';}
   subtitulo():string{return this.vista==='integraciones'?'Verifica el estado de los microservicios y cambia el origen de datos.':'Gestiona tus cursos y operaciones desde una única plataforma.';}
@@ -202,6 +204,7 @@ export class AcademiaPanel implements OnInit {
     if(['cursos','horarios','sedes'].includes(this.vista))this.cargarCursos();
     if(['cursos','categorias'].includes(this.vista))this.cargarCategorias();
     if(this.vista==='pagos')this.cargarPagos();
+    if(['matriculas','estudiantes'].includes(this.vista))this.cargarMatriculas();
   }
   private fallo(err:unknown):void {
     const message=typeof err==='object'&&err!==null&&'status' in err ? ' (HTTP '+String((err as {status:unknown}).status)+')':'';
@@ -231,16 +234,35 @@ export class AcademiaPanel implements OnInit {
       tipoDocumento:f.tipoDocumento,documento:f.documento.trim(),telefono:f.telefono.trim(),
       fecha:new Date().toISOString(),estado:'PENDIENTE',importe:c.price,origen:'DEMO'
     };
-    this.demo.registrarMatricula(m);
-    this.router.navigate(['/confirmacion']);
+    if(this.demo.modo()==='demo'){
+      this.demo.registrarMatricula(m);
+      this.router.navigate(['/confirmacion']);
+      return;
+    }
+    this.cargando.set(true);
+    this.api.registrarMatricula({
+      courseId:c.id,nombre:f.nombre.trim(),correo:f.correo.trim(),telefono:f.telefono.trim(),
+      tipoDocumento:f.tipoDocumento,documento:f.documento.trim()
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:()=>{this.cargando.set(false);this.router.navigate(['/confirmacion']);},
+      error:e=>{this.cargando.set(false);this.fallo(e);}
+    });
+  }
+  cargarMatriculas():void {
+    if(this.demo.modo()==='demo') return;
+    const req=this.vista==='estudiantes' ? this.api.listarMatriculasAdmin():this.api.listarMatriculas();
+    req.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:items=>this.matriculasApi.set(items),
+      error:e=>this.fallo(e)
+    });
   }
   exportarMatriculas():void {
     if(!isPlatformBrowser(this.platformId))return;
     const cols=['ID','Estudiante','Correo','Documento','Curso','Fecha','Estado','Importe'];
-    const csv=[cols,...this.demo.matriculas().map(m=>[m.id,m.nombre,m.correo,m.documento,m.courseName,m.fecha,m.estado,String(m.importe)])]
+    const csv=[cols,...this.matriculasVisibles().map(m=>[m.id,m.nombre,m.correo,m.documento,m.courseName,m.fecha,m.estado,String(m.importe)])]
       .map(row=>row.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
     const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
-    const a=document.createElement('a');a.href=url;a.download='matriculas-demo.csv';a.click();URL.revokeObjectURL(url);
+    const a=document.createElement('a');a.href=url;a.download='matriculas-myacademy.csv';a.click();URL.revokeObjectURL(url);
   }
   cargarPagos():void{
     if(this.demo.modo()==='demo')return;

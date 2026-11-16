@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, forkJoin, map, of, catchError, switchMap } from 'rxjs';
-import { Categoria, Curso, DiagnosticoApi, Horario, PageResult, Pago, Sede, Sugerencia } from './academia.models';
+import { Categoria, Curso, DiagnosticoApi, Horario, PageResult, Pago, Matricula, Sede, Sugerencia } from './academia.models';
 
 /**
  * Contratos contrastados con los controladores Java de Catalogo-Cursos-Publico-1A
@@ -102,6 +102,18 @@ export class AcademiaApiService {
   }
   editarSede(id: string, campo: 'name'|'address'|'city'|'reference'|'capacity', valor: string | number): Observable<unknown> {
     return this.http.patch(`${this.catalogo}/course-locations/${id}/${campo}`, { [campo]: valor });
+  }
+  /** REST provisional del microservicio de Matrículas, protegido por JWT. */
+  registrarMatricula(data: {
+    courseId:string; nombre:string; correo:string; telefono:string; tipoDocumento:string; documento:string
+  }): Observable<Matricula> {
+    return this.http.post<Matricula>('/api/matriculas',data);
+  }
+  listarMatriculas(): Observable<Matricula[]> {
+    return this.http.get<Matricula[]>('/api/matriculas');
+  }
+  listarMatriculasAdmin(): Observable<Matricula[]> {
+    return this.http.get<Matricula[]>('/api/matriculas/admin');
   }
   listarPagos(): Observable<Pago[]> { return this.http.get<Pago[]>(this.pagos); }
   pago(id: number): Observable<Pago> { return this.http.get<Pago>(`${this.pagos}/${id}`); }

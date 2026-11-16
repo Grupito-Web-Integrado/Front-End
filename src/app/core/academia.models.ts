@@ -72,9 +72,9 @@ export interface Matricula {
   documento: string;
   telefono: string;
   fecha: string;
-  estado: 'PENDIENTE' | 'CONFIRMADA' | 'CANCELADA';
+  estado: 'PENDIENTE' | 'CREADA' | 'PENDIENTE_DE_PAGO' | 'PAGADA' | 'CONFIRMADA' | 'CANCELADA' | 'PAGO_RECHAZADO' | 'PAGO_EXPIRADO';
   importe: number;
-  origen: 'DEMO';
+  origen: 'DEMO' | 'API';
 }
 export interface DiagnosticoApi {
   nombre: string;
