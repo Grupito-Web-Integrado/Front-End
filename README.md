@@ -1,3 +1,9 @@
+## Guía de arranque 2026
+
+Consulta [Guía MyAcademy para ejecutar y ver los cambios](docs/ARRANQUE_Y_CAMBIOS.md). Para ver la página sin Docker, abre ABRIR_MYACADEMY.bat; para el modo API, primero revisa los adaptadores del backend. Las instrucciones antiguas de este README se mantienen como referencia histórica y pueden referirse al estado previo de Matrículas.
+
+---
+
 > **Vista inmediata:** abre `ABRIR_MYACADEMY.bat` con doble clic desde la carpeta `Front-End`; utiliza Node 22.23.5 y abre el catálogo en `http://localhost:4200/inicio` en **modo demostración**, sin Docker. En `/login` cambia entre perfil estudiante y administrador de prueba. 
 >
 > **Modo conectado:** los servicios requieren Docker y los parches Java locales versionados en `integrations/`, revisados por los responsables de cada microservicio. La carga opcional de **35 cursos ficticios** en PostgreSQL se hace con `infra/CARGAR_CURSOS_DEMO_EN_BD.ps1 -Confirmar` y después con Elasticsearch. Los pagos no cobran realmente y la matrícula tiene un adaptador experimental.
