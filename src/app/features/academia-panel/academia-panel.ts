@@ -70,7 +70,9 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
           <label class="form-field"><span>Precio (S/)</span><input type="number" name="price" [(ngModel)]="nuevoCurso.price" min="0"></label>
           <label class="form-field"><span>Cupos</span><input type="number" name="capacity" [(ngModel)]="nuevoCurso.capacity" min="0"></label>
           <label class="form-field"><span>Horas</span><input type="number" name="duration" [(ngModel)]="nuevoCurso.durationHours" min="1"></label>
-          <label class="form-field"><span>Inicio</span><input type="date" name="startDate" [(ngModel)]="nuevoCurso.startDate"></label>
+          <label class="form-field"><span>Inicio *</span><input type="date" name="startDate" [(ngModel)]="nuevoCurso.startDate"></label>
+          <label class="form-field"><span>Fin *</span><input type="date" name="endDate" [(ngModel)]="nuevoCurso.endDate"></label>
+          <label class="form-field"><span>Hora de inicio *</span><input type="time" name="startTime" [(ngModel)]="nuevoCurso.startTime"></label>
         </div>
         <button class="btn-primary" (click)="crearCurso()">Guardar curso</button>
       </div>
@@ -179,8 +181,8 @@ export class AcademiaPanel implements OnInit {
   readonly dias=['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
   readonly formMatricula={nombre:'',correo:'',telefono:'',tipoDocumento:'DNI',documento:''};
   montoPago=100;
-  nuevoCurso:{code:string;name:string;description:string;categoryId:string;modality:'ONLINE'|'IN_PERSON'|'HYBRID';price:number;capacity:number;durationHours:number;startDate:string}=
-    {code:'',name:'',description:'',categoryId:'',modality:'ONLINE',price:0,capacity:30,durationHours:20,startDate:''};
+  nuevoCurso:{code:string;name:string;description:string;categoryId:string;modality:'ONLINE'|'IN_PERSON'|'HYBRID';price:number;capacity:number;durationHours:number;startDate:string;endDate:string;startTime:string}=
+    {code:'',name:'',description:'',categoryId:'',modality:'ONLINE',price:0,capacity:30,durationHours:20,startDate:'',endDate:'',startTime:'09:00'};
   nuevaCategoria={name:'',description:''};
   nuevoHorario={dayOfWeek:'MONDAY',startTime:'09:00',endTime:'11:00',room:''};
   nuevaSede={name:'',address:'',city:'',reference:'',capacity:30};
@@ -281,11 +283,14 @@ export class AcademiaPanel implements OnInit {
   }
   crearCurso():void{
     const f=this.nuevoCurso;
-    if(!f.code.trim()||!f.name.trim()||!f.categoryId||f.price<0||f.capacity<0||f.durationHours<=0){this.error.set('Revisa código, nombre, categoría, precio, horas y capacidad.');return;}
+    if(!f.code.trim()||!f.name.trim()||!f.categoryId||!f.startDate||!f.endDate||!f.startTime||
+       f.endDate<f.startDate||f.price<0||f.capacity<0||f.durationHours<=0){
+       this.error.set('Completa código, nombre, categoría, inicio, fin, hora y valores válidos.');return;
+    }
     const body={
       code:f.code.trim(),name:f.name.trim(),description:f.description,categoryId:f.categoryId,
       modality:f.modality,price:f.price,currency:'PEN',capacity:f.capacity,durationHours:f.durationHours,
-      startDate:f.startDate||null,endDate:null,startTime:null,status:'DRAFT'
+      startDate:f.startDate,endDate:f.endDate,startTime:f.startTime,status:'DRAFT'
     };
     if(this.demo.modo()==='demo'){
       const cat=this.categoriasVisibles().find(c=>c.id===f.categoryId);
