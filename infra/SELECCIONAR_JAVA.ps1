@@ -1,58 +1,66 @@
-﻿# Dot-source este archivo para preparar solo esta terminal y sus procesos hijos.
-# Prefiere JDK 21. Si solo hay JDK >= 21 (por ejemplo Java 24), lo permite
-# sin tocar JAVA_HOME ni el PATH global del usuario.
+﻿# Selecciona un JDK completo SOLO para la sesion PowerShell actual.
+# java.exe puede apuntar a Oracle javapath (JRE), que no contiene javac.exe.
+# Por eso buscamos instalaciones completas e inspeccionamos ambos ejecutables.
 $javaCandidates = New-Object 'System.Collections.Generic.List[string]'
-$jdkHomes = @($env:JDK21_HOME, $env:JAVA21_HOME, $env:JAVA_HOME)
-foreach($jdkHome in $jdkHomes) {
-  if(-not [string]::IsNullOrWhiteSpace($jdkHome)) {
-    $javaCandidates.Add((Join-Path $jdkHome 'bin\java.exe'))
+$jdkPaths = @($env:JDK21_HOME, $env:JAVA21_HOME, $env:JAVA_HOME)
+foreach($jdkPath in $jdkPaths){
+  if(-not [string]::IsNullOrWhiteSpace($jdkPath)){
+    $javaCandidates.Add((Join-Path $jdkPath 'bin\java.exe'))
   }
 }
-$roots = @(
-  (Join-Path $env:ProgramFiles 'Eclipse Adoptium'),
-  (Join-Path $env:ProgramFiles 'Java'),
-  (Join-Path $env:ProgramFiles 'Microsoft'),
-  (Join-Path $env:ProgramFiles 'Amazon Corretto'),
-  (Join-Path $env:ProgramFiles 'Zulu')
-)
-foreach($root in $roots) {
-  if(Test-Path $root) {
-    foreach($dir in @(Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue | Where-Object {$_.Name -match '21'})) {
-      $javaCandidates.Add((Join-Path $dir.FullName 'bin\java.exe'))
+foreach($cmdName in @('javac.exe','java.exe')){
+  foreach($command in @(Get-Command $cmdName -All -ErrorAction SilentlyContinue)){
+    if($command.Source){$javaCandidates.Add($command.Source)}
+  }
+}
+$rootNames = @('Eclipse Adoptium','Java','Microsoft','Amazon Corretto','Zulu','BellSoft','Azul Systems')
+foreach($base in @($env:ProgramFiles, $env:LOCALAPPDATA, ${env:ProgramFiles(x86)})){
+  if([string]::IsNullOrWhiteSpace($base)) {continue}
+  foreach($rootName in $rootNames){
+    $roots = @((Join-Path $base $rootName),(Join-Path (Join-Path $base 'Programs') $rootName))
+    foreach($rootPath in $roots){
+      if(-not(Test-Path -LiteralPath $rootPath -PathType Container)){continue}
+      foreach($folder in @(Get-ChildItem -LiteralPath $rootPath -Directory -ErrorAction SilentlyContinue)){
+        $javaCandidates.Add((Join-Path $folder.FullName 'bin\java.exe'))
+      }
     }
   }
-}
-$active = Get-Command java -ErrorAction SilentlyContinue
-if($active -and $active.Source) {
-  $javaCandidates.Add($active.Source)
 }
 $found = $null
-foreach($exe in @($javaCandidates | Select-Object -Unique)) {
-  if(-not(Test-Path -LiteralPath $exe)) {continue}
-  $jdkHome = Split-Path (Split-Path $exe -Parent) -Parent
-  $compiler = Join-Path $jdkHome 'bin\javac.exe'
-  if(-not(Test-Path $compiler)) {continue}
+foreach($candidate in @($javaCandidates | Select-Object -Unique)){
+  if(-not(Test-Path -LiteralPath $candidate -PathType Leaf)){continue}
+  # java.exe y javac.exe deben estar bajo el mismo JDK; no mezclar JRE 24 con JDK 21.
+  $binFolder = Split-Path $candidate -Parent
+  $compiler = Join-Path $binFolder 'javac.exe'
+  $javaExe = Join-Path $binFolder 'java.exe'
+  if(-not((Test-Path -LiteralPath $javaExe -PathType Leaf) -and
+          (Test-Path -LiteralPath $compiler -PathType Leaf))){continue}
   try {
-    $out = (& $exe --version 2>&1 | Out-String)
-    if($LASTEXITCODE -ne 0) {continue}
-    if($out -notmatch '(?im)^(?:openjdk|java)\s+(?:version\s+)?"?([0-9]+)') {continue}
+    $info = (& $javaExe -version 2>&1 | Out-String)
+    if($LASTEXITCODE -ne 0){continue}
+    if($info -notmatch '(?im)(?:java|openjdk)\s+(?:version\s+)?"?([0-9]+)'){continue}
     $major = [int]$matches[1]
-    if($major -lt 21) {continue}
-    if($major -eq 21) {
-      $found = @{Home=$jdkHome;Version=$major;Java=$exe}
-      break
-    }
-    if(-not $found) { $found = @{Home=$jdkHome;Version=$major;Java=$exe} }
-  } catch {
-    continue
-  }
+    if($major -lt 21){continue}
+    $javacInfo = (& $compiler -version 2>&1 | Out-String)
+    if($LASTEXITCODE -ne 0 -or $javacInfo -notmatch ('(?i)javac\s+'+$major+'(?:\.|\s|$)')){continue}
+    $candidateJdk = @{Base=(Split-Path $binFolder -Parent);Version=$major}
+    if($major -eq 21){$found=$candidateJdk;break}
+    if($null -eq $found){$found=$candidateJdk}
+  }catch{continue}
 }
-if(-not $found) {
-  throw 'No hay un JDK 21+ accesible. Instala JDK 21 (preferible) o configura JAVA_HOME apuntando a un JDK con javac.exe.'
+if($null -eq $found){
+  $javaCommand=Get-Command java -ErrorAction SilentlyContinue
+  $javaLocation=if($javaCommand){$javaCommand.Source}else{'No se encontró java.exe'}
+  Write-Host ('Java activo: '+$javaLocation) -ForegroundColor Yellow
+  Write-Host 'No se encontró un JDK completo: hacen falta java.exe y javac.exe de la misma versión.' -ForegroundColor Yellow
+  Write-Host 'Instala JDK 21 con PowerShell (posiblemente requiera permisos de administrador):' -ForegroundColor Cyan
+  Write-Host '  winget install --id EclipseAdoptium.Temurin.21.JDK --exact --source winget' -ForegroundColor Cyan
+  Write-Host 'Luego abre otra terminal PowerShell, entra a Front-End y ejecuta ABRIR_MYACADEMY.bat.'
+  throw 'Falta JDK 21+ completo con compilador javac.exe. Java Runtime (JRE) no es suficiente para Maven.'
 }
-$env:JAVA_HOME = $found.Home
-$env:Path = (Join-Path $found.Home 'bin') + ';' + $env:Path
-Write-Host ('JDK seleccionado para MyAcademy: '+$found.Version+' ('+$found.Home+')') -ForegroundColor Green
-if($found.Version -ne 21) {
-  Write-Host 'ADVERTENCIA: compilaremos con JDK '+$found.Version+' contra proyectos de Java 20/21. Si Maven falla, instala JDK 21 para esta terminal.' -ForegroundColor Yellow
+$env:JAVA_HOME = $found.Base
+$env:Path = (Join-Path $found.Base 'bin') + ';' + $env:Path
+Write-Host ('JDK seleccionado solo para MyAcademy: '+$found.Version+' ('+$found.Base+')') -ForegroundColor Green
+if($found.Version -ne 21){
+  Write-Host ('Nota: JDK '+$found.Version+' puede ejecutar los proyectos Java 21; si la compilación falla, instala JDK 21.') -ForegroundColor Yellow
 }
