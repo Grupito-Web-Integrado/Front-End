@@ -1,3 +1,9 @@
+> **Vista inmediata:** abre `ABRIR_MYACADEMY.bat` con doble clic desde la carpeta `Front-End`; utiliza Node 22.23.5 y abre el catálogo en `http://localhost:4200/inicio` en **modo demostración**, sin Docker. En `/login` cambia entre perfil estudiante y administrador de prueba. 
+>
+> **Modo conectado:** los servicios requieren Docker y los parches Java locales versionados en `integrations/`, revisados por los responsables de cada microservicio. La carga opcional de **35 cursos ficticios** en PostgreSQL se hace con `infra/CARGAR_CURSOS_DEMO_EN_BD.ps1 -Confirmar` y después con Elasticsearch. Los pagos no cobran realmente y la matrícula tiene un adaptador experimental.
+>
+> Guías: `docs/COMO_VER_RESULTADO.md`, `docs/MATRICULA_REST_TEMPORAL.md`, `docs/OUTBOX_CATALOGO.md` y `docs/SEED_DEMO_API.md`.
+
 # MyAcademy · Desarrollo Web Integrado
 
 Frontend Angular de la plataforma académica. Código de trabajo en `feat/dwi-frontend-gonzalo`, derivado de `feat/premium-frontend`.
@@ -24,7 +30,7 @@ La ruta `/gestion/integraciones` permite cambiar manualmente entre datos simulad
 - Pagos: `/api/pagos` → `http://127.0.0.1:8081`
 - Ajusta puertos en `proxy.conf.json` si tus microservicios utilizan otros.
 - Matrículas: demo persistida en navegador; el repositorio `Matricula-Publico_1E` revisado todavía no expone REST.
-- El login original sigue siendo simulado: **no se debe utilizar como autenticación real**. Configurar Keycloak con realm/client válidos y controles por rol antes de publicar a Internet.
+- El modo demo usa perfiles visuales sin permisos reales. En modo API se integra Keycloak con OpenID Connect, pero los microservicios originales aún requieren revisar y aplicar sus propios controles JWT antes de cualquier despliegue público.
 
 ## Rutas
 
