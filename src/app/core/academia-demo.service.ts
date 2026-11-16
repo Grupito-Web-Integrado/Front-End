@@ -15,7 +15,14 @@ export class AcademiaDemoService {
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.modo.set(localStorage.getItem('myacademy-modo') === 'api' ? 'api' : 'demo');
+    const queryMode = new URLSearchParams(window.location.search).get('modo');
+    const selectedMode = queryMode === 'demo' || queryMode === 'api'
+      ? queryMode
+      : (localStorage.getItem('myacademy-modo') === 'api' ? 'api' : 'demo');
+    this.modo.set(selectedMode);
+    if (queryMode === 'demo' || queryMode === 'api') {
+      localStorage.setItem('myacademy-modo', selectedMode);
+    }
     this.perfilDemo.set(localStorage.getItem('myacademy-perfil-demo')==='administrador'?'administrador':'estudiante');
     const anteriores = this.leer<Curso[]>('myacademy-cursos', []);
     // Mantener altas/ediciones del usuario sin perder los nuevos cursos demo.
