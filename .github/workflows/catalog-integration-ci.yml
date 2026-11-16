@@ -74,6 +74,13 @@ jobs:
           echo
           echo 'GET /api/pagos'
           curl -fsS --max-time 15 'http://localhost:8081/api/pagos'
+      - name: Mostrar errores de los servicios
+        if: failure()
+        run: |
+          echo '===== CATÁLOGO (últimas 150 líneas) ====='
+          tail -n 150 /tmp/catalogo.log 2>/dev/null || true
+          echo '===== PAGOS (últimas 80 líneas) ====='
+          tail -n 80 /tmp/pagos.log 2>/dev/null || true
       - name: Adjuntar diagnósticos
         if: always()
         uses: actions/upload-artifact@v4
