@@ -1,0 +1,46 @@
+{
+  "realm": "myacademy",
+  "enabled": true,
+  "displayName": "MyAcademy",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Administración académica"
+      },
+      {
+        "name": "ESTUDIANTE",
+        "description": "Cuenta de estudiante"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "myacademy-web",
+      "name": "MyAcademy Angular",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "consentRequired": false,
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://127.0.0.1:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://127.0.0.1:4200"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}

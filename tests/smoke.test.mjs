@@ -50,3 +50,24 @@ test('El formulario de matrícula informa que opera en modo demostración', () =
   assert.ok(panel.includes('El microservicio de matrículas no ofrece todavía endpoints HTTP'));
   assert.ok(panel.includes('No se realizará ningún cobro real'));
 });
+
+
+test('Keycloak usa PKCE y la SPA no persiste tokens', () => {
+  const auth=read('src/app/core/auth.service.ts');
+  const config=read('public/auth-config.json');
+  const routes=read('src/app/app.routes.ts');
+  assert.ok(auth.includes("pkceMethod: 'S256'"));
+  assert.ok(auth.includes("checkLoginIframe: false"));
+  assert.ok(!auth.includes('localStorage.setItem('));
+  assert.equal(JSON.parse(config).clientId,'myacademy-web');
+  assert.ok(routes.includes("canActivate: [protegerApi]"));
+});
+
+test('La infraestructura y realm incluyen las bases y Keycloak', () => {
+  const compose=read('infra/compose.yml');
+  const realm=JSON.parse(read('infra/keycloak/myacademy-realm.json'));
+  for(const svc of ['catalogo-db:','matricula-db:','keycloak-db:','keycloak:','elasticsearch:','redis:'])
+    assert.ok(compose.includes(svc),'Falta servicio '+svc);
+  assert.equal(realm.realm,'myacademy');
+  assert.ok(realm.roles.realm.some(r=>r.name==='ADMIN'));
+});
