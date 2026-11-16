@@ -1,5 +1,5 @@
-export type Modalidad = 'ONLINE' | 'PRESENTIAL' | 'HYBRID';
-export type EstadoCurso = 'DRAFT' | 'PUBLISHED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'INACTIVE';
+export type Modalidad = 'ONLINE' | 'IN_PERSON' | 'HYBRID';
+export type EstadoCurso = 'DRAFT' | 'PUBLISHED' | 'COMPLETED' | 'CANCELLED';
 export type EstadoCategoria = 'ACTIVE' | 'INACTIVE';
 
 export interface Categoria {
@@ -40,6 +40,8 @@ export interface Curso {
   capacity: number;
   availableSlots: number;
   status: EstadoCurso;
+  /** URL de presentación: aún NO forma parte del DTO Java. */
+  imageUrl?: string;
   categoryId?: string;
   categories?: Categoria[];
   schedules?: Horario[];

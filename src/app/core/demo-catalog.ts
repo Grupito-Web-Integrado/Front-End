@@ -18,7 +18,7 @@ export const CATEGORIAS_DEMO: Categoria[] = [
   id: uuid(100 + i), name, description, status: 'ACTIVE' as const
 }));
 
-type Ficha = [string, number, number, 'ONLINE' | 'PRESENTIAL' | 'HYBRID', number, number];
+type Ficha = [string, number, number, 'ONLINE' | 'IN_PERSON' | 'HYBRID', number, number];
 
 const FICHAS: Ficha[] = [
  ['Java desde cero hasta Spring Boot',0,169,'ONLINE',40,90],
@@ -34,7 +34,7 @@ const FICHAS: Ficha[] = [
  ['Prompt Engineering aplicado',1,129,'ONLINE',20,120],
  ['Agentes inteligentes y automatización',1,269,'ONLINE',48,60],
  ['Fundamentos de ciberseguridad',2,159,'ONLINE',36,85],
- ['Hacking ético y pentesting',2,279,'PRESENTIAL',48,35],
+ ['Hacking ético y pentesting',2,279,'IN_PERSON',48,35],
  ['Seguridad de redes empresariales',2,229,'HYBRID',40,50],
  ['Cloud Computing con AWS',3,229,'ONLINE',44,75],
  ['Docker y Kubernetes',3,259,'HYBRID',48,50],
@@ -54,7 +54,7 @@ const FICHAS: Ficha[] = [
  ['Finanzas para emprendedores',7,159,'ONLINE',28,80],
  ['Notion y productividad profesional',8,99,'ONLINE',18,130],
  ['Inglés para tecnología',9,149,'ONLINE',30,100],
- ['Internet de las cosas con Arduino',10,229,'PRESENTIAL',40,40],
+ ['Internet de las cosas con Arduino',10,229,'IN_PERSON',40,40],
  ['Robótica e innovación tecnológica',10,269,'HYBRID',46,45]
 ];
 
@@ -68,6 +68,7 @@ export const CURSOS_DEMO: Curso[] = FICHAS.map(([name, categoria, price, modalit
     startDate: date, durationHours, capacity,
     availableSlots: Math.max(0, capacity - (i * 7) % capacity),
     status: 'PUBLISHED', categoryId: CATEGORIAS_DEMO[categoria].id,
-    categories: [CATEGORIAS_DEMO[categoria]]
+    categories: [CATEGORIAS_DEMO[categoria]],
+    imageUrl: '/course-covers/area-' + categoria + '.svg'
   };
 });

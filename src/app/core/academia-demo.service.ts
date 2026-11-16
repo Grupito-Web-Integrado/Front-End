@@ -15,8 +15,23 @@ export class AcademiaDemoService {
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.modo.set(localStorage.getItem('myacademy-modo') === 'api' ? 'api' : 'demo');
-    this.cursos.set(this.leer('myacademy-cursos', CURSOS_DEMO));
-    this.categorias.set(this.leer('myacademy-categorias', CATEGORIAS_DEMO));
+    const anteriores = this.leer<Curso[]>('myacademy-cursos', []);
+    // Mantener altas/ediciones del usuario sin perder los nuevos cursos demo.
+    const porId = new Map<string, Curso>();
+    for (const base of CURSOS_DEMO) porId.set(base.id, base);
+    for (const anterior of anteriores) {
+      const actual = porId.get(anterior.id);
+      const modalidad = anterior.modality === ('PRESENTIAL' as any) ? 'IN_PERSON' : anterior.modality;
+      const estado = (['DRAFT','PUBLISHED','CANCELLED','COMPLETED'] as string[]).includes(anterior.status)
+        ? anterior.status : 'DRAFT';
+      porId.set(anterior.id, { ...actual, ...anterior, modality: modalidad as Curso['modality'],
+        status: estado as Curso['status'], imageUrl: anterior.imageUrl || actual?.imageUrl });
+    }
+    this.cursos.set([...porId.values()]);
+    const anterioresCategorias = this.leer<Categoria[]>('myacademy-categorias', []);
+    const categorias = new Map<string, Categoria>(CATEGORIAS_DEMO.map(c=>[c.id,c]));
+    for (const cat of anterioresCategorias) categorias.set(cat.id,cat);
+    this.categorias.set([...categorias.values()]);
     this.matriculas.set(this.leer('myacademy-matriculas', []));
     this.pagos.set(this.leer('myacademy-pagos', []));
   }
