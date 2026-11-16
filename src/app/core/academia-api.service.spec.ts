@@ -80,4 +80,28 @@ describe('AcademiaApiService - contratos de microservicios', () => {
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
+  it('registra matrícula sin importe enviado por el navegador', () => {
+    const datos={courseId:'11111111-1111-4111-8111-111111111111',
+      nombre:'Alumno Demo',correo:'ejemplo@demo.invalid',telefono:'',
+      tipoDocumento:'DNI',documento:'12345678'};
+    api.registrarMatricula(datos).subscribe();
+    const req=http.expectOne('/api/matriculas');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(datos);
+    expect(req.request.body).not.toHaveProperty('importe');
+    expect(req.request.body).not.toHaveProperty('studentId');
+    req.flush({id:'mat-1',estado:'CREADA',origen:'API'});
+  });
+
+  it('consulta matrículas solo del perfil actual, y admin por ruta separada', () => {
+    api.listarMatriculas().subscribe();
+    const own=http.expectOne('/api/matriculas');
+    expect(own.request.method).toBe('GET');
+    own.flush([]);
+    api.listarMatriculasAdmin().subscribe();
+    const admin=http.expectOne('/api/matriculas/admin');
+    expect(admin.request.method).toBe('GET');
+    admin.flush([]);
+  });
+
 });
