@@ -91,12 +91,13 @@ public class EnrollmentRestController {
              .bind("phone",f.telefono()==null?"":f.telefono().trim())
              .bind("type",f.tipoDocumento()).bind("document",f.documento().trim())
              .fetch().rowsUpdated())
-          .thenReturn(Map.<String,Object>of("id",id.toString(),
-             "courseId",course.toString(),"courseName",c.path("name").asText("Curso"),
-             "nombre",f.nombre().trim(),"correo",f.correo().trim(),
-             "tipoDocumento",f.tipoDocumento(),"documento",f.documento().trim(),
-             "telefono",f.telefono()==null?"":f.telefono().trim(),
-             "estado","CREADA","importe",amount,"origen","API"))
+          .thenReturn(Map.<String,Object>ofEntries(
+             Map.entry("id",id.toString()),Map.entry("courseId",course.toString()),
+             Map.entry("courseName",c.path("name").asText("Curso")),
+             Map.entry("nombre",f.nombre().trim()),Map.entry("correo",f.correo().trim()),
+             Map.entry("tipoDocumento",f.tipoDocumento()),Map.entry("documento",f.documento().trim()),
+             Map.entry("telefono",f.telefono()==null?"":f.telefono().trim()),
+             Map.entry("estado","CREADA"),Map.entry("importe",amount),Map.entry("origen","API")))
           .onErrorMap(DataIntegrityViolationException.class,
              e->new ResponseStatusException(HttpStatus.CONFLICT,"Matrícula duplicada o inválida",e));
       });

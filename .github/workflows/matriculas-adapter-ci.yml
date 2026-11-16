@@ -22,6 +22,7 @@ jobs:
         run: |
           mkdir -p matricula/src/main/java/com/example/Matricula_Pedidos/integration/web
           cp integrations/matricula-api/*.java matricula/src/main/java/com/example/Matricula_Pedidos/integration/web/
+          cp integrations/matricula-api/compat/*.java matricula/src/main/java/com/example/Matricula_Pedidos/domain/model/enrollments/enrollment_students/vo/
       - name: Compilar sin alterar el repositorio original
         run: |
           cd matricula
