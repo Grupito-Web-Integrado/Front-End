@@ -41,6 +41,9 @@ SELECT coalesce(json_agg(json_build_object(
  'address',address,'city',city,'reference',reference,'capacity',capacity)),'[]'::json)::text
 FROM course_locations WHERE deleted=FALSE;
 '@
+  # API Bulk: una sola confirmación de refresh, incluso con cientos de cursos.
+  $buffer=New-Object System.Text.StringBuilder
+  $total=0
   foreach($item in @(
     @{index='course_categories';key='courseCategoryId';sql=$categorias},
     @{index='courses';key='id';sql=$cursos},
@@ -53,13 +56,26 @@ FROM course_locations WHERE deleted=FALSE;
       if($null -eq $row){continue}
       $id=[string]$row.($item.key)
       if(-not $id){throw "Documento en $($item.index) sin clave"}
-      $uri="$base/$($item.index)/_doc/$([uri]::EscapeDataString($id))?refresh=wait_for"
+      $header='{"index":{"_index":"' + $item.index + '","_id":"' + $id + '"}}'
       $body=ConvertTo-Json -InputObject $row -Depth 20 -Compress
-      $null=Invoke-RestMethod -Uri $uri -Method Put -ContentType 'application/json; charset=utf-8' -Body $body -TimeoutSec 20
+      $null=$buffer.Append($header).Append([char]10)
+      $null=$buffer.Append($body).Append([char]10)
       $count++
+      $total++
     }
-    Write-Host "$($item.index): $count documentos reales sincronizados" -ForegroundColor Green
+    Write-Host "$($item.index): $count documentos reales preparados" -ForegroundColor Cyan
   }
+  if($total -eq 0){
+    Write-Host 'No hay filas en PostgreSQL para proyectar.' -ForegroundColor Yellow
+    return
+  }
+  $bytes=[System.Text.Encoding]::UTF8.GetBytes($buffer.ToString())
+  $response=Invoke-RestMethod -Uri ($base+'/_bulk?refresh=wait_for') -Method Post -Body $bytes -ContentType 'application/x-ndjson' -TimeoutSec 120
+  if($response.errors){
+    $failures=@($response.items | Where-Object { $_.index.error } | Select-Object -First 5)
+    throw "Elasticsearch rechazó documentos en Bulk: $(ConvertTo-Json -InputObject $failures -Depth 7 -Compress)"
+  }
+  Write-Host "$total documentos sincronizados con Elasticsearch." -ForegroundColor Green
 }
 if($Continuo){
   Write-Warning 'Sincronizador temporal de desarrollo. Ctrl+C lo detiene. No usar en producción ni junto con una proyección concurrente sin coordinación.'
