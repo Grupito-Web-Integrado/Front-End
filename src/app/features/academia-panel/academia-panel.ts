@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
-import { from, concatMap, toArray } from 'rxjs';
+import { from, concatMap, toArray, forkJoin, map, catchError, of } from 'rxjs';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -426,16 +426,27 @@ export class AcademiaPanel implements OnInit {
     });
   }
   diagnosticar():void{
-    this.diagnosticos.set([]);this.cargando.set(true);
-    let faltan=2;
-    const cerrar=()=>{if(--faltan===0)this.cargando.set(false);};
-    this.api.cursosPublicados(0,1).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:p=>{this.diagnosticos.update(x=>[...x,{nombre:'Catálogo',estado:'online',detalle:'API respondió; '+p.totalElements+' cursos publicados.'}]);cerrar();},
-      error:e=>{this.diagnosticos.update(x=>[...x,{nombre:'Catálogo',estado:'offline',detalle:'No responde /api/v1/courses/published (HTTP '+String(e.status||0)+')'}]);cerrar();}
-    });
-    this.api.listarPagos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:p=>{this.diagnosticos.update(x=>[...x,{nombre:'Pagos',estado:'online',detalle:p.length+' registros.'}]);cerrar();},
-      error:e=>{this.diagnosticos.update(x=>[...x,{nombre:'Pagos',estado:'offline',detalle:'No responde /api/pagos (HTTP '+String(e.status||0)+')'}]);cerrar();}
+    this.diagnosticos.set([]);
+    this.cargando.set(true);
+    const resultado=<T>(nombre:string,peticion:import('rxjs').Observable<T>,descripcion:(data:T)=>string)=>
+      peticion.pipe(
+        map(data=>({nombre,estado:'online' as const,detalle:descripcion(data)})),
+        catchError((error:unknown)=>of({
+          nombre,estado:'offline' as const,
+          detalle:'Sin respuesta satisfactoria (HTTP '+String(error && typeof error==='object' && 'status' in error ? (error as {status:unknown}).status : 0)+'). Revisa permisos, servicio y logs.'
+        }))
+      );
+    forkJoin([
+      resultado('Catálogo',this.api.cursosPublicados(0,1),data=>data.totalElements+' cursos publicados.'),
+      resultado('Indexer de Joker',this.api.estadoIndexer(),data=>{
+        const services=data.components ? Object.entries(data.components).map(([name,value])=>name+': '+value.status).join(' · ') : '';
+        return 'Estado: '+data.status+(services?' · '+services:'')+'. Kafka → Elasticsearch.';
+      }),
+      resultado('Matrículas',this.api.listarMatriculasAdmin(),data=>data.length+' solicitudes recibidas.'),
+      resultado('Pagos',this.api.listarPagos(),data=>data.length+' registros de pago.')
+    ]).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:data=>{this.diagnosticos.set(data);this.cargando.set(false);},
+      error:e=>{this.fallo(e);this.cargando.set(false);}
     });
   }
 }

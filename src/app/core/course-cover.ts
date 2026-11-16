@@ -1,13 +1,11 @@
-import { Categoria, Curso } from './academia.models';
-import { CATEGORIAS_DEMO } from './demo-catalog';
+import { Curso } from './academia.models';
 
 /** Resuelve la portada sin atribuir al backend un campo de imagen inexistente. */
 export function portadaCurso(curso: Curso): string {
   const direct=curso.imageUrl?.trim();
   if(direct && (direct.startsWith('/course-covers/') || /^https:\/\//.test(direct))) return direct;
   const asociada=curso.categories?.[0];
-  const fallback = CATEGORIAS_DEMO.find(cat=>cat.id===curso.categoryId);
-  const nombre=(asociada?.name || fallback?.name || curso.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const nombre=(asociada?.name || curso.name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const grupos: [RegExp,number][]=[
     [/program|angular|react|java|python|desarrollo|flutter|sql|software/,0],
     [/inteligencia|machine|agente|automatiz|prompt|ia generativa/,1],

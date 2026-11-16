@@ -35,7 +35,7 @@ test('No se inicia Keycloak con credenciales de ejemplo', () => {
   assert.ok(config.includes('provideHttpClient'));
 });
 
-test('Existe un catálogo demo de 35 cursos y 11 categorías', () => {
+test('Los fixtures de prueba de 35 cursos no se cargan en el navegador', () => {
   const catalog = read('src/app/core/demo-catalog.ts');
   const fichas = catalog.split('const FICHAS: Ficha[] = [')[1].split('];')[0];
   const countCourses = (fichas.match(/^ \['/gm) || []).length;
@@ -43,23 +43,29 @@ test('Existe un catálogo demo de 35 cursos y 11 categorías', () => {
   const categories = catalog.split('export const CATEGORIAS_DEMO: Categoria[] = [')[1].split('].map(')[0];
   const countCategories = (categories.match(/^  \['/gm) || []).length;
   assert.equal(countCategories,11);
+  const store=read('src/app/core/academia-demo.service.ts');
+  assert.ok(!store.includes("from './demo-catalog'"));
+  assert.ok(!store.includes('localStorage.setItem('));
+  assert.ok(store.includes("signal<'demo'|'api'>('api')"));
 });
 
-test('El formulario de matrícula informa que opera en modo demostración', () => {
+test('La matrícula utiliza exclusivamente la API y no anuncia perfiles ficticios', () => {
   const panel = read('src/app/features/academia-panel/academia-panel.ts');
-  assert.ok(panel.includes('Matrícula de demostración'));
+  assert.ok(!panel.includes('Modo demostración</button>'));
   assert.ok(panel.includes('this.api.registrarMatricula('));
   assert.ok(panel.includes('this.api.listarMatriculas()'));
   assert.ok(panel.includes('No se realizará ningún cobro real'));
 });
 
 
-test('Keycloak usa PKCE y la SPA no persiste tokens', () => {
+test('Keycloak usa PKCE, no depende de iframe de terceros y la SPA no persiste tokens', () => {
   const auth=read('src/app/core/auth.service.ts');
   const config=read('public/auth-config.json');
   const routes=read('src/app/app.routes.ts');
   assert.ok(auth.includes("pkceMethod: 'S256'"));
   assert.ok(auth.includes("checkLoginIframe: false"));
+  assert.ok(!auth.includes("silentCheckSsoRedirectUri:"));
+  assert.ok(!auth.includes("onLoad: 'check-sso'"));
   assert.ok(!auth.includes('localStorage.setItem('));
   assert.equal(JSON.parse(config).clientId,'myacademy-web');
   assert.ok(routes.includes("canActivate: [protegerApi]"));
@@ -95,4 +101,24 @@ test('El editor del curso integra horarios y sedes, separado del público', () =
   assert.ok(editor.includes('guardarSede()'));
   const routes=read('src/app/app.routes.ts');
   assert.ok(routes.includes("path: 'gestion/cursos/:id'"));
+});
+
+test('El acceso de estudiante y administrador requiere roles de Keycloak, sin selector demo', () => {
+  const login=read('src/app/features/login/login.html');
+  const routes=read('src/app/app.routes.ts');
+  const interceptor=read('src/app/core/auth.interceptor.ts');
+  assert.ok(login.includes("entrar('ESTUDIANTE')"));
+  assert.ok(login.includes("entrar('ADMIN')"));
+  assert.ok(!login.includes('Vista administrador'));
+  assert.ok(routes.includes("rol: 'ESTUDIANTE'"));
+  assert.ok(routes.includes("rol: 'ADMIN'"));
+  assert.ok(interceptor.includes("req.url.startsWith('/api/matriculas/')"));
+});
+
+test('El Indexer de Joker se observa vía health y NO se consulta como buscador directo', () => {
+  const proxy=JSON.parse(read('proxy.conf.json'));
+  const api=read('src/app/core/academia-api.service.ts');
+  assert.ok(proxy['/api/indexer']);
+  assert.ok(api.includes("('/api/indexer/health')"));
+  assert.ok(api.includes("${this.catalogo}/courses/published"));
 });

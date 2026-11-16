@@ -1,15 +1,10 @@
 param(
-  [ValidateSet('Demo','Api')][string]$Modo='Demo',
+  [ValidateSet('Api')][string]$Modo='Api',
   [switch]$ConObservabilidad
 )
 $ErrorActionPreference='Stop'
 $front=Split-Path $PSScriptRoot -Parent
 $root=Split-Path $front -Parent
-if($Modo -eq 'Demo'){
-  Write-Host 'MyAcademy DEMO: solo Node/Angular, sin Docker ni Java.' -ForegroundColor Cyan
-  & (Join-Path $PSScriptRoot 'ABRIR_DEMO.ps1')
-  exit 0
-}
 foreach($cmd in @('git','docker','java')){
   if(-not(Get-Command $cmd -ErrorAction SilentlyContinue)){throw "Para API se necesita $cmd."}
 }
@@ -49,8 +44,8 @@ for($n=0;$n -lt 70;$n++){
 if(-not $ready){throw 'Keycloak no inició. Revisa logs Docker de keycloak.'}
 Write-Host 'Abriendo los servicios Maven. Revisa cada terminal para confirmar el arranque.' -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot 'ABRIR_APIS.ps1') -IncluirIndexer
-& (Join-Path $PSScriptRoot 'ABRIR_DEMO.ps1') -Modo Api
+& (Join-Path $PSScriptRoot 'ABRIR_DEMO.ps1')
 Write-Host 'Angular disponible, pero los servicios requieren comprobación adicional:' -ForegroundColor Yellow
 Write-Host 'Ejecuta .\infra\VERIFICAR.ps1 y revisa los logs Java.'
-Write-Host 'Entrar API: http://localhost:4200/inicio?modo=api'
-Write-Host 'Volver a demo: http://localhost:4200/inicio?modo=demo'
+Write-Host 'Acceso: http://localhost:4200/inicio'
+Write-Host 'Inicio de sesión: http://localhost:4200/login'
