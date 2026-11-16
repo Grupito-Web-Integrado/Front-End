@@ -44,7 +44,7 @@ jobs:
       - name: Test nested routes and queries through Vite proxy
         run: |
           set -eu
-          curl -fsS 'http://127.0.0.1:4200/api/v1/courses/published?page=0&size=10' | jq -e '.port == 8080 and .path | contains("/api/v1/courses/published")'
+          curl -fsS 'http://127.0.0.1:4200/api/v1/courses/published?page=0&size=10' | jq -e '.port == 8080 and (.path | startswith("/api/v1/courses/published"))'
           curl -fsS 'http://127.0.0.1:4200/api/pagos/42' | jq -e '.port == 8081 and .path == "/api/pagos/42"'
           curl -fsS 'http://127.0.0.1:4200/api/matriculas/admin' | jq -e '.port == 8082 and .path == "/api/matriculas/admin"'
           curl -fsS 'http://127.0.0.1:4200/api/indexer/health' | jq -e '.port == 8084 and .path == "/actuator/health"'
