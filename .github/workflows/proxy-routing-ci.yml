@@ -34,8 +34,8 @@ jobs:
           sleep 1
       - name: Start Angular development server
         run: |
-          npm start > /tmp/myacademy-ng.log 2>&1 &
-          for i in $(seq 1 90); do
+          npm start -- --host 127.0.0.1 > /tmp/myacademy-ng.log 2>&1 &
+          for i in $(seq 1 45); do
             if curl -fsS --max-time 5 http://127.0.0.1:4200/inicio >/dev/null; then exit 0; fi
             sleep 2
           done
