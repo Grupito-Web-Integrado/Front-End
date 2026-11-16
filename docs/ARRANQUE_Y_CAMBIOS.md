@@ -1,3 +1,5 @@
+> **Actualización (16-11-2026):** los antiguos pasos que ofrecían modo DEMO ya no se aplican. El sistema utiliza Keycloak y las APIs reales; consulta el [README actualizado](../README.md) y [la guía de inicio](COMO_VER_RESULTADO.md). El resto de este documento conserva el historial de los cambios del equipo y las notas de integración.
+
 # MyAcademy — Guía para levantarlo y entender los cambios
 
 Fecha: 16 de noviembre de 2026. Proyecto UTP: Desarrollo Web Integrado.

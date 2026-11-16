@@ -1,92 +1,76 @@
-## Guía de arranque 2026
+# MyAcademy · Frontend Angular conectado a microservicios
 
-Consulta [Guía MyAcademy para ejecutar y ver los cambios](docs/ARRANQUE_Y_CAMBIOS.md). Para ver la página sin Docker, abre ABRIR_MYACADEMY.bat; para el modo API, primero revisa los adaptadores del backend. Las instrucciones antiguas de este README se mantienen como referencia histórica y pueden referirse al estado previo de Matrículas.
+Proyecto académico de Desarrollo Web Integrado (UTP). Código en rama `feat/dwi-frontend-gonzalo`, pendiente de revisión en Pull Request hacia `feat/premium-frontend`.
 
----
+## Autenticación y perfiles
 
-> **Vista inmediata:** abre `ABRIR_MYACADEMY.bat` con doble clic desde la carpeta `Front-End`; utiliza Node 22.23.5 y abre el catálogo en `http://localhost:4200/inicio` en **modo demostración**, sin Docker. En `/login` cambia entre perfil estudiante y administrador de prueba. 
->
-> **Modo conectado:** los servicios requieren Docker y los parches Java locales versionados en `integrations/`, revisados por los responsables de cada microservicio. La carga opcional de **35 cursos ficticios** en PostgreSQL se hace con `infra/CARGAR_CURSOS_DEMO_EN_BD.ps1 -Confirmar` y después con Elasticsearch. Los pagos no cobran realmente y la matrícula tiene un adaptador experimental.
->
-> Guías: `docs/COMO_VER_RESULTADO.md`, `docs/MATRICULA_REST_TEMPORAL.md`, `docs/OUTBOX_CATALOGO.md` y `docs/SEED_DEMO_API.md`.
+**Ya no hay selector DEMO ni permisos simulados.** Desde `/login` hay dos accesos: **Estudiante** y **Administrador**. Ambos redirigen al mismo Keycloak (realm `myacademy`, cliente `myacademy-web`). El rol real del JWT determina qué pantallas se habilitan. Elegir un botón **no crea ni otorga un rol**.
 
-# MyAcademy · Desarrollo Web Integrado
+Se retiró la comprobación silenciosa por iframe que provocaba `Timeout when waiting for 3rd party check iframe message`. El adaptador inicia sin ese iframe y procesa el código OAuth cuando vuelve de Keycloak. Si Keycloak está apagado, la autenticación no puede completarse: no existe acceso alternativo ni perfiles falsos.
 
-Frontend Angular de la plataforma académica. Código de trabajo en `feat/dwi-frontend-gonzalo`, derivado de `feat/premium-frontend`.
+## Ejecutarlo en Windows
 
-## Iniciar en Windows
-
-Necesitas Node.js 22.22.3+ (por ejemplo con fnm). Mantén tu Node 20 disponible para otros proyectos.
+Requisitos: Docker Desktop, JDK 21, Git, Node 22.23.5 (fnm), memoria suficiente para Kafka, Elasticsearch y Keycloak. Trabaja en la carpeta `Front-End`:
 
 ```powershell
-cd "C:\Users\gonza\Documents\Cursos 2022 UTP\CICLO X\Desarrollo Web Integrado\PROYECTO\Front-End"
-fnm env --shell powershell | Out-String | Invoke-Expression
-fnm use 22.23.5
-npm ci
-npm start
-```
+git fetch origin
+git switch feat/dwi-frontend-gonzalo
+git pull --ff-only
 
-Ir a http://localhost:4200/inicio. El catálogo demo funciona sin backend. Revisa `npm run build` antes de integrar la rama.
+# Revisar primero: no modifica repositorios
+.\infra\PREPARAR_BACKENDS.ps1
 
-## Modo demo / API
+# Aplicar la integración en ramas LOCALES, sin sobrescribir ramas ajenas
+.\infra\PREPARAR_BACKENDS.ps1 -Confirmar
 
-La ruta `/gestion/integraciones` permite cambiar manualmente entre datos simulados y peticiones reales. **Nunca se reemplazan automáticamente errores del backend con registros falsos.**
+# Arrancar infraestructura, backend y frontend
+.\ABRIR_MYACADEMY.bat
 
-- Catálogo: `/api/v1` → `http://127.0.0.1:8080`
-- Pagos: `/api/pagos` → `http://127.0.0.1:8081`
-- Ajusta puertos en `proxy.conf.json` si tus microservicios utilizan otros.
-- Matrículas: demo persistida en navegador; el repositorio `Matricula-Publico_1E` revisado todavía no expone REST.
-- El modo demo usa perfiles visuales sin permisos reales. En modo API se integra Keycloak con OpenID Connect, pero los microservicios originales aún requieren revisar y aplicar sus propios controles JWT antes de cualquier despliegue público.
+# En otra terminal: crear cuentas con roles reales en Keycloak si aún no existen
+.\infra\CREAR_CUENTAS_KEYCLOAK.ps1 -Confirmar
 
-## Rutas
-
-`/inicio`, `/catalogo`, `/curso/:id`, `/matricula/:idCurso`, `/mis-matriculas`, `/pagos`, `/gestion/cursos`, `/gestion/categorias`, `/gestion/horarios`, `/gestion/sedes`, `/gestion/estudiantes`, `/gestion/integraciones`.
-
-## Seguridad y límites
-
-Los nombres, precios y cursos demo son ficticios. Las solicitudes de pago del servicio Java registran estados, pero **no realizan cobros bancarios**. No almacenar información real de estudiantes en el modo demo (usa localStorage). Antes de desplegar: pruebas end-to-end, control de acceso, privacidad, manejo de errores, validación de CORS/puertos y revisión de los microservicios.
-
-La rama del equipo `feat/premium-frontend` no se modifica directamente. Integrar mediante Pull Request.
-
-## Avance: curso como unidad funcional
-
-La estructura de la plataforma separa las pantallas por rol:
-
-- **Vista estudiante:** `/curso/:id`. Solo se muestran cursos `PUBLISHED`. Incluye portada, descripción, modalidad, cupos, fechas, horarios y sedes del backend.
-- **Vista administrador:** `/gestion/cursos/:id`. Edición de datos, publicación/cancelación/finalización, y gestión de horarios y sedes **asociados al curso**.
-- **Categorías:** las once categorías de demostración pueden crearse/editarse; el encabezado público enseña **como máximo seis** inicialmente y permite desplegar las demás. En modo API se recuperan todas las páginas de `/api/v1/course-categories/active`.
-- **Imágenes:** SVGs propios bajo `public/course-covers` y campo `imageUrl` exclusivo de demostración. El DTO Java no incorpora imagen; hace falta ampliar el backend para guardar una portada real.
-
-`CourseStatus` contiene `DRAFT`, `PUBLISHED`, `CANCELLED` y `COMPLETED`. Modalidad presencial se serializa como `IN_PERSON`.
-
-### Probar ambos perfiles en modo demostración
-
-1. Abre `http://localhost:4200/login`.
-2. Selecciona **Vista estudiante** para el catálogo y matrículas de prueba.
-3. Selecciona **Vista administrador** para habilitar el menú de gestión y editar `/gestion/cursos`.
-4. Ninguno de estos perfiles ficticios otorga derechos reales en los microservicios.
-
-### Poner en marcha la infraestructura
-
-```powershell
-.\infra\INICIAR_TODO.ps1
-```
-
-Este comando necesita Docker Desktop, Git, Java 21, fnm/Node.js 22.23.5 y puertos libres. Consulta `docs/INFRA_Y_KEYCLOAK.md`. Los scripts inicializan índices de Elasticsearch que Catálogo necesita para devolver datos en lugar de error 500 por índice inexistente. No reinicies ni elimines los volúmenes de tus compañeros.
-
-Para ver el estado del backend:
-
-```powershell
+# Comprobar estado de todos los servicios
 .\infra\VERIFICAR.ps1
 ```
 
-En el navegador, entra en `/gestion/integraciones` y selecciona modo API una vez que los servidores respondan. El endpoint real de Matrículas todavía no existe; las matrículas demo se conservan únicamente en el navegador.
+`PREPARAR_BACKENDS.ps1` se detiene si hay cambios locales pendientes en Catálogo, Matrículas o Pagos, y crea ramas `feat/myacademy-integracion-local` para no alterar el trabajo del equipo. Los adaptadores son provisionales y requieren revisión independiente antes de integrarse en las ramas originales.
 
-### Pruebas automáticas
+Al arrancar: http://localhost:4200/login. Keycloak: http://localhost:8180/admin. La inicialización de `infra/.env` genera contraseñas aleatorias; **no subas ese archivo a GitHub**. El script de cuentas genera claves que solo deben guardarse en un lugar privado; se utiliza una única vez por entorno.
 
-- `npm run test:smoke`
-- `npx ng test --watch=false --include=src/app/core/academia-api.service.spec.ts`
-- `npm run build`
-- GitHub Actions: `angular-ci.yml`, `catalog-integration-ci.yml`, `keycloak-smoke-ci.yml`.
+### Rutas principales
 
-**No fusionar a producción** sin revisar seguridad backend, migraciones, indexador Kafka y pruebas E2E.
+| Perfil | Ruta | Operación |
+| --- | --- | --- |
+| Público | `/inicio`, `/catalogo`, `/curso/:id` | Cursos publicados, categorías, búsqueda, información y cupos reales |
+| Estudiante (ESTUDIANTE) | `/mis-matriculas`, `/matricula/:idCurso` | Solicitudes y seguimiento de matrículas |
+| Administrador (ADMIN) | `/gestion/cursos`, `/gestion/cursos/:id` | Gestión de cursos y relaciones |
+| Administrador (ADMIN) | `/gestion/categorias`, `/gestion/estudiantes`, `/pagos` | Categorías, matrículas y registros del servicio de pagos |
+| Administrador (ADMIN) | `/gestion/integraciones` | Diagnóstico de cuatro microservicios |
+
+No hay datos ficticios de respaldo: si Catálogo no responde, se verá el error. Si el servidor no contiene cursos publicados, el catálogo estará vacío hasta crearlos y publicarlos.
+
+## Conexión con el Indexer de Joker, sin alterar su código
+
+- Repositorio original: https://github.com/Grupito-Web-Integrado/Catalog-Indexer-
+- Se clona y ejecuta **sin modificaciones** desde su consola Maven propia en el puerto local 8084.
+- Consume Kafka (`catalog.COURSE.events`, `catalog.COURSE_CATEGORY.events`, `catalog.COURSE_SCHEDULE.events`, `catalog.COURSE_LOCATION.events`) y actualiza Elasticsearch.
+- Angular consulta la API de Catálogo en el puerto 8080; Catálogo utiliza Elasticsearch. No se inventa una API de búsqueda en el Indexer.
+- `/api/indexer/health` se envía a `http://127.0.0.1:8084/actuator/health` para comprobar Kafka y Elasticsearch desde el panel administrativo. Los puertos 8081 y 8082 corresponden a Pagos y Matrículas.
+- `proxy.conf.json` utiliza reglas Vite `/api/v1/**`, `/api/pagos/**`, `/api/matriculas/**` y `/api/indexer/**` para cubrir subrutas y peticiones de detalle.
+
+El Indexer no expone una pantalla frontend ni una API REST de búsqueda: su responsabilidad es el flujo de eventos. Más información en `docs/INTEGRACION_INDEXER_JOKER.md`.
+
+## Comprobación y límites
+
+```powershell
+npm run test:smoke
+npx ng test --watch=false --include=src/app/core/academia-api.service.spec.ts
+npm run build
+.\infra\VERIFICAR.ps1
+```
+
+Las pruebas CI han compilado Angular y los adaptadores Java de Catálogo, Matrículas y Pagos, validado los roles de Keycloak e Indexer y proyectado filas de PostgreSQL a Elasticsearch. **Esto no sustituye una validación real de acceso por navegador y el flujo completo de matrícula-pago-Kafka en el PC del estudiante.**
+
+Por completar en los microservicios antes de un despliegue público: integración de adaptadores en repositorios originales mediante PR, Saga de matrículas, pagos reales, correos/WhatsApp, reserva de cupos, imágenes persistentes en backend, configuración HTTPS, autorización de extremo a extremo y E2E completo. Los scripts usan infraestructura local de desarrollo, no son un despliegue de producción.
+
+Para detener Docker conservando volúmenes: `./infra/DETENER_INFRA.ps1`. No ejecutes `docker compose down -v` en un entorno compartido.
