@@ -193,3 +193,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .course-editor .form-field{min-width:0}
 .course-editor textarea{min-height:98px}
 @media(max-width:920px){.editor-columns{grid-template-columns:1fr}.editor-sidebar{position:static}}
+
+.course-detail-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border-top:1px solid #e7eaf3;padding-top:17px;margin-top:18px}
+.course-detail-facts div{background:#f9f8fd;border-radius:10px;padding:12px;min-width:0}
+.course-detail-facts span{display:block;color:#8c92a5;font-size:11px;margin-bottom:7px}
+.course-detail-facts strong{font-size:13px;color:#25304c;overflow-wrap:anywhere}
+@media(max-width:500px){.course-detail-facts{grid-template-columns:1fr}}
