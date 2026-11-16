@@ -183,3 +183,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .detail-visual img{width:100%;height:100%;object-fit:cover;display:block}
 @media(max-width:850px){.categories-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.categories-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+
+/* Editor contextual de un curso, separado de la vista pública */
+.editor-columns{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.75fr);align-items:start;gap:24px}
+.editor-sidebar{position:sticky;top:105px}
+.editor-sidebar .form-card{padding:21px}
+.editor-cover{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:13px;border:1px solid #e9e9f4;margin-bottom:14px;background:#272a66}
+.course-editor .table-scroll{margin-top:22px}
+.course-editor .form-field{min-width:0}
+.course-editor textarea{min-height:98px}
+@media(max-width:920px){.editor-columns{grid-template-columns:1fr}.editor-sidebar{position:static}}

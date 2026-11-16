@@ -66,7 +66,7 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
           <label class="form-field"><span>Nombre *</span><input name="curso" [(ngModel)]="nuevoCurso.name" placeholder="Nombre del programa"></label>
           <label class="form-field wide"><span>Descripción</span><textarea name="description" [(ngModel)]="nuevoCurso.description" rows="2"></textarea></label>
           <label class="form-field"><span>Categoría *</span><select name="categoryId" [(ngModel)]="nuevoCurso.categoryId"><option value="">Seleccionar</option>@for (c of categoriasVisibles();track c.id){<option [value]="c.id">{{c.name}}</option>}</select></label>
-          <label class="form-field"><span>Modalidad</span><select name="modality" [(ngModel)]="nuevoCurso.modality"><option value="ONLINE">Online</option><option value="HYBRID">Híbrido</option><option value="PRESENTIAL">Presencial</option></select></label>
+          <label class="form-field"><span>Modalidad</span><select name="modality" [(ngModel)]="nuevoCurso.modality"><option value="ONLINE">Online</option><option value="HYBRID">Híbrido</option><option value="IN_PERSON">Presencial</option></select></label>
           <label class="form-field"><span>Precio (S/)</span><input type="number" name="price" [(ngModel)]="nuevoCurso.price" min="0"></label>
           <label class="form-field"><span>Cupos</span><input type="number" name="capacity" [(ngModel)]="nuevoCurso.capacity" min="0"></label>
           <label class="form-field"><span>Horas</span><input type="number" name="duration" [(ngModel)]="nuevoCurso.durationHours" min="1"></label>
@@ -75,7 +75,7 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
         <button class="btn-primary" (click)="crearCurso()">Guardar curso</button>
       </div>
       <div class="table-card"><div class="table-heading"><h2>Cursos registrados</h2><button class="btn-outline" (click)="cargarCursos()">Actualizar</button></div><div class="table-scroll"><table><thead><tr><th>Curso</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
-      @for(c of cursosVisibles();track c.id){<tr><td><strong>{{c.name}}</strong><small>{{c.code}}</small></td><td>S/ {{c.price|number:'1.2-2'}}</td><td><span class="status-pill">{{c.status}}</span></td><td><button class="table-link" (click)="seleccionarCurso(c)">Editar</button><a class="table-link" [routerLink]="['/curso',c.id]">Ver</a></td></tr>}
+      @for(c of cursosVisibles();track c.id){<tr><td><strong>{{c.name}}</strong><small>{{c.code}}</small></td><td>S/ {{c.price|number:'1.2-2'}}</td><td><span class="status-pill">{{c.status}}</span></td><td><a class="table-link" [routerLink]="['/gestion/cursos',c.id]">Editar curso, horarios y sedes</a>@if(c.status==='PUBLISHED'){<a class="table-link" [routerLink]="['/curso',c.id]">Ver como estudiante</a>}</td></tr>}
       </tbody></table></div></div>
       @if(cursoEditando();as c){<div class="form-card"><h2>Editar: {{c.name}}</h2><p>La API actual expone operaciones PATCH separadas para nombre, descripción y precio.</p>
         <div class="form-grid">
@@ -178,7 +178,7 @@ export class AcademiaPanel implements OnInit {
   readonly dias=['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
   readonly formMatricula={nombre:'',correo:'',telefono:'',tipoDocumento:'DNI',documento:''};
   montoPago=100;
-  nuevoCurso:{code:string;name:string;description:string;categoryId:string;modality:'ONLINE'|'PRESENTIAL'|'HYBRID';price:number;capacity:number;durationHours:number;startDate:string}=
+  nuevoCurso:{code:string;name:string;description:string;categoryId:string;modality:'ONLINE'|'IN_PERSON'|'HYBRID';price:number;capacity:number;durationHours:number;startDate:string}=
     {code:'',name:'',description:'',categoryId:'',modality:'ONLINE',price:0,capacity:30,durationHours:20,startDate:''};
   nuevaCategoria={name:'',description:''};
   nuevoHorario={dayOfWeek:'MONDAY',startTime:'09:00',endTime:'11:00',room:''};
