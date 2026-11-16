@@ -13,7 +13,7 @@ if($Modo -eq 'Demo'){
 foreach($cmd in @('git','docker','java')){
   if(-not(Get-Command $cmd -ErrorAction SilentlyContinue)){throw "Para API se necesita $cmd."}
 }
-$javaInfo=(& java -version 2>&1 | Out-String)
+$javaInfo=(& java --version | Out-String)
 if($javaInfo -notmatch 'version "21[\."]'){
   throw "API requiere Java JDK 21. Detectado: $javaInfo"
 }
@@ -49,7 +49,7 @@ for($n=0;$n -lt 70;$n++){
 if(-not $ready){throw 'Keycloak no inició. Revisa logs Docker de keycloak.'}
 Write-Host 'Abriendo los servicios Maven. Revisa cada terminal para confirmar el arranque.' -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot 'ABRIR_APIS.ps1') -IncluirIndexer
-& (Join-Path $PSScriptRoot 'ABRIR_DEMO.ps1')
+& (Join-Path $PSScriptRoot 'ABRIR_DEMO.ps1') -Modo Api
 Write-Host 'Angular disponible, pero los servicios requieren comprobación adicional:' -ForegroundColor Yellow
 Write-Host 'Ejecuta .\infra\VERIFICAR.ps1 y revisa los logs Java.'
 Write-Host 'Entrar API: http://localhost:4200/inicio?modo=api'
