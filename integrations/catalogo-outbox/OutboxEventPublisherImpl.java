@@ -20,7 +20,7 @@ public class OutboxEventPublisherImpl implements OutboxEventPublisher {
   }
   private Mono<Void> process(OutboxEventEntity event) {
     return publish(event)
-      .then(repository.markAsPublished(event.id()))
+      .then(repository.markAsPublished(event.id()).then())
       .onErrorResume(error->repository.increaseRetry(event.id(),
         error.getMessage()==null?"Error Kafka":error.getMessage()).then())
       .then();

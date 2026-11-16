@@ -29,19 +29,38 @@ jobs:
           cd catalogo
           chmod +x mvnw
           ./mvnw -B -DskipTests package
-      - name: Boot real PostgreSQL
+      - name: Start disposable PostgreSQL Redis and Elasticsearch
         run: |
           cp infra/.env.example infra/.env
-          docker compose --env-file infra/.env -f infra/compose.yml up -d catalogo-db
+          docker compose --env-file infra/.env -f infra/compose.yml up -d catalogo-db redis elasticsearch
           for i in $(seq 1 30); do
             if docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db pg_isready -U admin -d catalog_db; then break; fi
             sleep 3
           done
-      - name: Validate Flyway V3 SQL in PostgreSQL
+      - name: Run Flyway V3 through catalog application
         run: |
-          docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db psql -U admin -d catalog_db -v ON_ERROR_STOP=1 -f /dev/stdin < integrations/catalogo-outbox/V3__fix_outbox_and_modalities.sql || true
-          # The migration is designed to run AFTER V1 and V2; compile stage ensures Flyway picks it up.
-          echo 'SQL V3 is staged for Flyway on app startup.'
+          export SPRING_R2DBC_URL='r2dbc:postgresql://localhost:5435/catalog_db'
+          export SPRING_R2DBC_USERNAME=admin
+          export SPRING_R2DBC_PASSWORD='REEMPLAZAR_CON_CLAVE_UNICA'
+          export SPRING_FLYWAY_URL='jdbc:postgresql://localhost:5435/catalog_db'
+          export SPRING_FLYWAY_USER=admin
+          export SPRING_FLYWAY_PASSWORD='REEMPLAZAR_CON_CLAVE_UNICA'
+          export SPRING_ELASTICSEARCH_URIS='http://localhost:9200'
+          export SPRING_DATA_REDIS_HOST=localhost
+          java -jar catalogo/target/Catalogo-Cursos-0.0.1-SNAPSHOT.jar > /tmp/catalog-outbox.log 2>&1 &
+          for i in $(seq 1 40); do
+            if docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db psql -U admin -d catalog_db -tAc "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='outbox_events' AND column_name='retry_count';" | grep -q '^1
+      - name: Stop disposable database
+        if: always()
+        run: docker compose --env-file infra/.env -f infra/compose.yml down -v || true
+; then
+              echo 'Flyway agregó columnas Outbox'
+              exit 0
+            fi
+            sleep 3
+          done
+          tail -100 /tmp/catalog-outbox.log
+          exit 1
       - name: Stop disposable database
         if: always()
         run: docker compose --env-file infra/.env -f infra/compose.yml down -v || true
