@@ -1,29 +1,40 @@
 <section class="shell access-page">
   <div class="access-panel">
-    <span class="section-overline">IDENTIDAD Y ACCESO · KEYCLOAK</span>
-    <h1>{{ denied ? 'Acceso restringido' : 'Bienvenido a MyAcademy' }}</h1>
-    @if(denied){ <p>Tu cuenta no tiene el rol requerido para acceder a esta sección. Solicita permisos al administrador del proyecto.</p> }
-    @if(auth.autenticado()){
-      <p>Sesión iniciada como <strong>{{ auth.usuario() }}</strong>.</p>
-      <p>Roles: {{ auth.roles().join(', ') || 'Sin roles asignados' }}</p>
-      <div class="button-row"><a class="btn-primary" routerLink="/catalogo">Explorar cursos</a><button class="btn-outline" (click)="salir()">Cerrar sesión</button></div>
-    } @else {
-      <p>Inicia sesión de forma segura con Keycloak. No introduzcas contraseñas en formularios del frontend.</p>
-      <p class="mode-note">Estado de identidad: {{ auth.estado() }}. {{ auth.error() }}</p>
-      <div class="button-row"><button class="btn-primary" (click)="iniciar()">Acceder con Keycloak ↗</button><a class="btn-outline" routerLink="/catalogo">Ver cursos</a></div>
+    <span class="section-overline">MYACADEMY · ACCESO SEGURO</span>
+    <h1>{{ denied ? 'Acceso restringido' : 'Iniciar sesión' }}</h1>
+    @if(denied) {
+      <p class="error-banner" role="alert">Tu cuenta no tiene el rol requerido. Ingresa con una cuenta autorizada o solicita permisos al administrador.</p>
     }
-    @if(demo.modo()==='demo'){
-      <div class="form-card">
-        <h2>Perfiles para validar las pantallas</h2>
-        <p>Son vistas de demostración; no sustituyen la autenticación real con Keycloak.</p>
-        <div class="button-row">
-          <button class="btn-outline" [class.active]="demo.perfilDemo()==='estudiante'" (click)="seleccionarPerfilDemo('estudiante')">Vista estudiante</button>
-          <button class="btn-outline" [class.active]="demo.perfilDemo()==='administrador'" (click)="seleccionarPerfilDemo('administrador')">Vista administrador</button>
-        </div>
-        @if(demo.perfilDemo()==='administrador'){<a class="btn-primary" routerLink="/gestion/cursos">Entrar a gestionar cursos</a>}
+    @if(auth.autenticado()){
+      <p>Sesión activa: <strong>{{ auth.usuario() }}</strong></p>
+      <p>Permisos: {{ auth.roles().join(', ') || 'Sin rol asignado' }}</p>
+      <div class="button-row">
+        @if(esAdmin()){<a class="btn-primary" routerLink="/gestion/cursos">Ir al panel administrativo</a>}
+        @if(esEstudiante()){<a class="btn-primary" routerLink="/mis-matriculas">Ir a mi espacio de estudiante</a>}
+        <button class="btn-outline" (click)="salir()">Cerrar sesión</button>
       </div>
+    } @else {
+      <p>Selecciona cómo ingresar. Keycloak verifica tu identidad y los permisos de la cuenta.</p>
+      <div class="access-roles">
+        <div class="access-role">
+          <span class="role-emoji" aria-hidden="true">🎓</span>
+          <h2>Estudiante</h2>
+          <p>Explora cursos, revisa horarios y administra tus solicitudes de matrícula.</p>
+          <button class="btn-primary" [disabled]="procesando()" (click)="entrar('ESTUDIANTE')">Iniciar sesión como estudiante ↗</button>
+        </div>
+        <div class="access-role">
+          <span class="role-emoji" aria-hidden="true">⚙</span>
+          <h2>Administrador</h2>
+          <p>Gestiona cursos, categorías, sedes, horarios y registros académicos.</p>
+          <button class="btn-outline" [disabled]="procesando()" (click)="entrar('ADMIN')">Iniciar sesión como administrador ↗</button>
+        </div>
+      </div>
+      @if(auth.estado()==='sin-conexion' || auth.estado()==='no-configurado'){
+        <p class="error-banner" role="alert">El servidor de identidad no está disponible. Verifica Keycloak en <code>localhost:8180</code>. {{ auth.error() }}</p>
+      }
+      <p class="access-help">La opción seleccionada no crea ni concede permisos. El rol debe estar asignado en Keycloak.</p>
+      <a class="text-link" routerLink="/catalogo">← Explorar catálogo sin iniciar sesión</a>
     }
     @if(mensaje()){<p class="error-banner" role="alert">{{ mensaje() }}</p>}
-    @if(demo.modo()==='demo'){<p class="mode-note">Modo demostración activo. Las matrículas demo no se envían a los microservicios.</p>}
   </div>
 </section>

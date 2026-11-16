@@ -5,7 +5,7 @@ import { AuthService } from './core/auth.service';
 import { authInterceptor } from './core/auth.interceptor';
 import { routes } from './app.routes';
 
-// Keycloak requires a real realm/client and is deliberately not initialized with placeholder values.
+// El callback OAuth se procesa sin iframe SSO; las rutas protegidas esperan iniciar() antes de validar roles.
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),

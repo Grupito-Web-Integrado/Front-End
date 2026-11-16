@@ -53,19 +53,18 @@ export class AuthService {
       adapter.onAuthRefreshSuccess = () => this.sincronizar();
       adapter.onAuthLogout = () => this.limpiar();
       adapter.onAuthRefreshError = () => this.limpiar();
-      // Safari y otros navegadores restringen cookies de terceros;
-      // evitamos fallback automático a redirecciones repetitivas.
+      // Procesa el callback OAuth al regresar de Keycloak sin comprobar SSO en un
+      // iframe de terceros. El chequeo silencioso anterior bloqueaba el login.
+      // La sesión se inicia EXPLÍCITAMENTE con login() desde un botón.
       await adapter.init({
-        onLoad: 'check-sso',
         checkLoginIframe: false,
-        pkceMethod: 'S256',
-        silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-        silentCheckSsoFallback: false
+        pkceMethod: 'S256'
       });
       this.sincronizar();
       this.estado.set('disponible');
       this.error.set('');
     } catch (error) {
+      this.adapter = null;
       this.estado.set('sin-conexion');
       this.error.set(error instanceof Error ? error.message : 'No se pudo conectar a Keycloak');
       this.limpiar();
@@ -91,13 +90,16 @@ export class AuthService {
     return this.roles().some(r => r.toUpperCase() === rol.toUpperCase());
   }
 
-  async iniciarSesion(returnUrl = '/mis-matriculas'): Promise<void> {
+  async iniciarSesion(returnUrl = '/mis-matriculas', perfil: 'ESTUDIANTE' | 'ADMIN' = 'ESTUDIANTE'): Promise<void> {
     await this.iniciar();
     if (this.estado() !== 'disponible' || !this.adapter) {
-      throw new Error('Keycloak no está disponible. Inicia la infraestructura primero.');
+      throw new Error(this.error() || 'Keycloak no responde en http://localhost:8180. Inicia la infraestructura e inténtalo nuevamente.');
     }
     const ruta = returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/mis-matriculas';
-    await this.adapter.login({ redirectUri: window.location.origin + ruta });
+    // No se concede un rol desde el frontend: solo se solicita autenticación.
+    // Tras el callback, las rutas validan el rol real contenido en el JWT.
+    const destino = perfil === 'ADMIN' ? '/gestion/cursos' : '/mis-matriculas';
+    await this.adapter.login({ redirectUri: window.location.origin + (ruta || destino), prompt: 'login' });
   }
 
   async cerrarSesion(): Promise<void> {

@@ -1,6 +1,5 @@
 import { Component, inject, computed } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AcademiaDemoService } from './core/academia-demo.service';
 import { AuthService } from './core/auth.service';
 
 @Component({
@@ -11,9 +10,7 @@ import { AuthService } from './core/auth.service';
   styleUrl:'./app.scss'
 })
 export class App {
-  protected readonly demo=inject(AcademiaDemoService);
   protected readonly auth=inject(AuthService);
-  protected readonly puedeAdministrar=computed(()=>this.demo.modo()==='demo'
-    ? this.demo.perfilDemo()==='administrador'
-    : this.auth.autenticado() && this.auth.tieneRol('ADMIN'));
+  protected readonly puedeAdministrar=computed(()=>this.auth.autenticado() && this.auth.tieneRol('ADMIN'));
+  protected readonly esEstudiante=computed(()=>this.auth.autenticado() && this.auth.tieneRol('ESTUDIANTE'));
 }
