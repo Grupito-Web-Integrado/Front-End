@@ -1,0 +1,45 @@
+name: Keycloak roles and login endpoints smoke
+on:
+  push:
+    branches: [feat/dwi-frontend-gonzalo]
+    paths:
+      - infra/CREAR_CUENTAS_KEYCLOAK.ps1
+      - .github/workflows/keycloak-roles-ci.yml
+  workflow_dispatch:
+
+jobs:
+  roles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Crear credenciales exclusivas del contenedor temporal
+        run: |
+          python3 - <<'PY'
+          import secrets
+          with open('infra/.env','w') as f:
+            for name in ('CATALOG_DB_PASSWORD','MATRICULA_DB_PASSWORD','KEYCLOAK_DB_PASSWORD','KEYCLOAK_ADMIN_PASSWORD'):
+              f.write(name+'='+secrets.token_urlsafe(30)+'\n')
+            f.write('KEYCLOAK_ADMIN_USERNAME=admin\n')
+          PY
+      - name: Arrancar Keycloak y PostgreSQL temporales
+        run: docker compose --env-file infra/.env -f infra/compose.yml up -d keycloak-db keycloak
+      - name: Comprobar el realm OIDC
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS --max-time 4 http://localhost:8180/realms/myacademy/.well-known/openid-configuration >/dev/null; then exit 0; fi
+            sleep 3
+          done
+          docker compose --env-file infra/.env -f infra/compose.yml logs keycloak --tail=60
+          exit 1
+      - name: Crear cuentas reales con ADMIN/ESTUDIANTE (ocultando claves)
+        shell: pwsh
+        run: ./infra/CREAR_CUENTAS_KEYCLOAK.ps1 -Confirmar -SinMostrarClaves
+      - name: Confirmar permisos reales en el realm
+        run: |
+          DC="docker compose --env-file infra/.env -f infra/compose.yml exec -T keycloak /opt/keycloak/bin/kcadm.sh"
+          $DC get-roles -r myacademy --uusername estudiante.myacademy | jq -e '.[] | select(.name == "ESTUDIANTE")'
+          $DC get-roles -r myacademy --uusername administrador.myacademy | jq -e '.[] | select(.name == "ADMIN")'
+      - name: Apagar contenedores temporales
+        if: always()
+        run: docker compose --env-file infra/.env -f infra/compose.yml down -v || true

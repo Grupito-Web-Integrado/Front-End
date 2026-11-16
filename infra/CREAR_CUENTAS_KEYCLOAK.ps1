@@ -1,4 +1,4 @@
-param([switch]$Confirmar)
+param([switch]$Confirmar,[switch]$SinMostrarClaves)
 $ErrorActionPreference='Stop'
 $envFile=Join-Path $PSScriptRoot '.env'
 $compose=Join-Path $PSScriptRoot 'compose.yml'
@@ -33,7 +33,8 @@ $usuarios=@(
 foreach($u in $usuarios){
   $raw=& docker @common get users -r myacademy -q ('username='+$u.nombre) --fields id,username
   if($LASTEXITCODE -ne 0){throw "No fue posible consultar el usuario $($u.nombre)"}
-  $list=@($raw -join [Environment]::NewLine | ConvertFrom-Json)
+  $json=$raw -join [Environment]::NewLine
+  $list=@($json | ConvertFrom-Json)
   if(@($list|Where-Object {$_.username -eq $u.nombre}).Count -gt 0){
     throw "La cuenta $($u.nombre) ya existe. Por seguridad no se reemplaza ni restablece contraseña."
   }
@@ -49,8 +50,10 @@ foreach($u in $usuarios){
   if($LASTEXITCODE -ne 0){throw "No se pudo asignar rol $($u.rol) al usuario $($u.nombre)"}
   $result+=@{Usuario=$u.nombre;Rol=$u.rol;Clave=$pwd}
 }
-Write-Host 'Cuentas creadas en el realm myacademy. Credenciales de uso local:' -ForegroundColor Green
-foreach($u in $result){
-  Write-Host ("Usuario: "+$u.Usuario+" | Rol: "+$u.Rol+" | Contraseña: "+$u.Clave) -ForegroundColor Cyan
+Write-Host 'Cuentas creadas en el realm myacademy con los roles solicitados.' -ForegroundColor Green
+if(-not $SinMostrarClaves){
+  foreach($u in $result){
+    Write-Host ("Usuario: "+$u.Usuario+" | Rol: "+$u.Rol+" | Contraseña: "+$u.Clave) -ForegroundColor Cyan
+  }
+  Write-Host 'Guarda las contraseñas fuera de GitHub y cámbialas antes de usar este entorno con otras personas.' -ForegroundColor Yellow
 }
-Write-Host 'Guarda las contraseñas fuera de GitHub y cámbialas antes de utilizar este entorno con otras personas.' -ForegroundColor Yellow
