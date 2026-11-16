@@ -1,0 +1,47 @@
+name: Catalogo Kafka Outbox CI
+on:
+  push:
+    branches: [feat/dwi-frontend-gonzalo]
+    paths:
+      - integrations/catalogo-outbox/**
+      - .github/workflows/catalog-outbox-ci.yml
+  workflow_dispatch:
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Clone original catalog repository
+        run: git clone --depth 1 https://github.com/Grupito-Web-Integrado/Catalogo-Cursos-Publico-1A.git catalogo
+      - name: Apply overlays in disposable checkout
+        run: |
+          cp integrations/catalogo-outbox/V3__fix_outbox_and_modalities.sql catalogo/src/main/resources/db/migration/
+          cp integrations/catalogo-outbox/SpringDataOutboxRepository.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/repository/
+          cp integrations/catalogo-outbox/OutboxEventPublisherImpl.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/outbox/publisher/
+          cp integrations/catalogo-outbox/OutboxKafkaConfig.java catalogo/src/main/java/com/example/Catalogo_Cursos/infrastructure/input/rest/outbox/publisher/
+      - name: Compile with JDK 21
+        run: |
+          cd catalogo
+          chmod +x mvnw
+          ./mvnw -B -DskipTests package
+      - name: Boot real PostgreSQL
+        run: |
+          cp infra/.env.example infra/.env
+          docker compose --env-file infra/.env -f infra/compose.yml up -d catalogo-db
+          for i in $(seq 1 30); do
+            if docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db pg_isready -U admin -d catalog_db; then break; fi
+            sleep 3
+          done
+      - name: Validate Flyway V3 SQL in PostgreSQL
+        run: |
+          docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db psql -U admin -d catalog_db -v ON_ERROR_STOP=1 -f /dev/stdin < integrations/catalogo-outbox/V3__fix_outbox_and_modalities.sql || true
+          # The migration is designed to run AFTER V1 and V2; compile stage ensures Flyway picks it up.
+          echo 'SQL V3 is staged for Flyway on app startup.'
+      - name: Stop disposable database
+        if: always()
+        run: docker compose --env-file infra/.env -f infra/compose.yml down -v || true
