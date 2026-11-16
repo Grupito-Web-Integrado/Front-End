@@ -69,6 +69,16 @@ export const CURSOS_DEMO: Curso[] = FICHAS.map(([name, categoria, price, modalit
     availableSlots: Math.max(0, capacity - (i * 7) % capacity),
     status: 'PUBLISHED', categoryId: CATEGORIAS_DEMO[categoria].id,
     categories: [CATEGORIAS_DEMO[categoria]],
-    imageUrl: '/course-covers/area-' + categoria + '.svg'
+    imageUrl: '/course-covers/area-' + categoria + '.svg',
+    schedules: [{
+      id: uuid(2000+i),courseId:uuid(i+1),dayOfWeek:['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'][i%5],
+      startTime:i%2===0?'18:00':'09:00',endTime:i%2===0?'20:00':'11:00',
+      room:modality==='ONLINE'?'Aula virtual':'Aula '+(101+i)
+    }],
+    locations:modality==='ONLINE'?[]:[{
+      id:uuid(3000+i),courseId:uuid(i+1),name:'Sede de demostración',
+      address:'Av. de ejemplo 100',city:'Ica',reference:'Referencia ficticia',
+      capacity:capacity
+    }]
   };
 });

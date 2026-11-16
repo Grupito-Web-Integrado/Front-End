@@ -25,7 +25,9 @@ export class AcademiaDemoService {
       const estado = (['DRAFT','PUBLISHED','CANCELLED','COMPLETED'] as string[]).includes(anterior.status)
         ? anterior.status : 'DRAFT';
       porId.set(anterior.id, { ...actual, ...anterior, modality: modalidad as Curso['modality'],
-        status: estado as Curso['status'], imageUrl: anterior.imageUrl || actual?.imageUrl });
+        status: estado as Curso['status'], imageUrl: anterior.imageUrl || actual?.imageUrl,
+        schedules: anterior.schedules || actual?.schedules || [],
+        locations: anterior.locations || actual?.locations || [] });
     }
     this.cursos.set([...porId.values()]);
     const anterioresCategorias = this.leer<Categoria[]>('myacademy-categorias', []);
