@@ -20,7 +20,10 @@ try {
   await p1.locator('#username').fill('e2e_student');
   await p1.locator('#password').fill(studentPassword);
   await p1.locator('#kc-login').click();
-  await p1.waitForURL(/localhost:4200\/mi-espacio/, {timeout:60000});
+  await p1.waitForTimeout(2500);
+  console.log('Student callback path:', new URL(p1.url()).pathname);
+  console.log('Student page text:', (await p1.locator('body').innerText()).slice(0,500));
+  await p1.waitForURL(/localhost:4200\/mi-espacio/, {timeout:20000,waitUntil:'domcontentloaded'});
   await p1.getByRole('heading',{name:'Tu espacio de aprendizaje'}).waitFor({timeout:30000});
   assert.match(await p1.locator('body').innerText(),/e2e_student/);
   // Un estudiante NO puede entrar al área ADMIN por alterar el URL.
@@ -39,7 +42,10 @@ try {
   await p2.locator('#username').fill('e2e_admin');
   await p2.locator('#password').fill(adminPassword);
   await p2.locator('#kc-login').click();
-  await p2.waitForURL(/localhost:4200\/gestion/, {timeout:60000});
+  await p2.waitForTimeout(2500);
+  console.log('Admin callback path:', new URL(p2.url()).pathname);
+  console.log('Admin page text:', (await p2.locator('body').innerText()).slice(0,500));
+  await p2.waitForURL(/localhost:4200\/gestion/, {timeout:20000,waitUntil:'domcontentloaded'});
   await p2.getByRole('heading',{name:'Panel de control'}).waitFor({timeout:30000});
   assert.match(await p2.locator('body').innerText(),/e2e_admin/);
   await p2.goto(origin+'/gestion/cursos');
