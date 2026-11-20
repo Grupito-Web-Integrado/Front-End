@@ -26,7 +26,7 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
         <div class="form-layout">
           <form class="form-card" (ngSubmit)="registrarMatricula()">
             <h2>Datos del estudiante</h2>
-            <p class="mode-note">Solicitud registrada en el microservicio de Matrículas. La reserva definitiva del cupo y el cobro requieren confirmación.</p>
+            <p class="mode-note">Enviarás una solicitud al microservicio de Matrículas. La reserva definitiva del cupo y el pago requieren confirmación posterior.</p>
             <div class="form-grid">
               <label class="form-field wide"><span>Nombre completo *</span><input name="nombre" [(ngModel)]="formMatricula.nombre" required minlength="3" placeholder="Nombres y apellidos"></label>
               <label class="form-field"><span>Correo electrónico *</span><input name="correo" type="email" [(ngModel)]="formMatricula.correo" required placeholder="correo@ejemplo.com"></label>
@@ -34,14 +34,26 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
               <label class="form-field"><span>Tipo de documento</span><select name="tipoDoc" [(ngModel)]="formMatricula.tipoDocumento"><option>DNI</option><option>CE</option><option>PASAPORTE</option></select></label>
               <label class="form-field"><span>Número de documento *</span><input name="documento" [(ngModel)]="formMatricula.documento" required placeholder="Documento de identidad"></label>
             </div>
-            <button class="btn-primary" type="submit">Solicitar matrícula ↗</button>
+            <button class="btn-primary" type="submit" [disabled]="cargando() || curso.status!=='PUBLISHED' || curso.availableSlots<=0">{{cargando()?'Enviando solicitud…':'Solicitar matrícula ↗'}}</button>
+            @if(curso.availableSlots<=0){<p class="error-banner" role="alert">Este curso no tiene cupos disponibles.</p>}
           </form>
           <aside class="summary-card"><span class="section-overline">TU ELECCIÓN</span><h2>{{ curso.name }}</h2><p>{{ curso.modality }} · {{ curso.durationHours || '—' }} horas</p><div class="divider-line"></div><div class="total-row"><span>Importe</span><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><small>No se realizará ningún cobro real.</small></aside>
         </div>
-      } @else { <div class="empty-state">No se encontró el curso. <a routerLink="/catalogo">Volver a buscar</a></div> }
+      } @else if(!cargando()) { <div class="empty-state">No hay un curso publicado disponible. <a routerLink="/catalogo">Volver a buscar</a></div> }
     }
     @if (vista==='confirmacion') {
-      <div class="form-card confirmation-box"><span class="big-check">✓</span><h2>Solicitud de matrícula registrada</h2><p>La solicitud fue enviada al sistema de matrículas. Consulta su estado; esto no confirma el pago ni la reserva definitiva del cupo.</p><a class="btn-primary" routerLink="/mis-matriculas">Ver mis matrículas</a></div>
+      <div class="form-card confirmation-box">
+        @if(matriculaConfirmada();as solicitud){
+          <span class="big-check" aria-hidden="true">✓</span><h2>Solicitud registrada por el servicio</h2>
+          <p>Referencia: <strong>{{solicitud.id}}</strong></p>
+          <p>Estado informado: <strong>{{solicitud.estado}}</strong></p>
+          <p>La solicitud fue recibida. El pago y la reserva definitiva del cupo siguen sujetos a confirmación.</p>
+        } @else {
+          <h2>Consulta tus matrículas</h2>
+          <p>No existe un comprobante de una solicitud reciente en esta página. Verifica el historial antes de volver a enviar otra matrícula.</p>
+        }
+        <a class="btn-primary" routerLink="/mi-espacio">Ver mi espacio de estudiante</a>
+      </div>
     }
     @if (vista==='matriculas' || vista==='estudiantes') {
       <div class="table-card"><div class="table-heading"><h2>{{ vista==='estudiantes'?'Matrículas de estudiantes':'Historial de matrículas' }}</h2><button class="btn-outline" (click)="exportarMatriculas()">Exportar CSV</button></div>
@@ -181,6 +193,7 @@ export class AcademiaPanel implements OnInit {
   readonly error=signal(''); readonly mensaje=signal(''); readonly cargando=signal(false);
   readonly cursosApi=signal<Curso[]>([]); readonly categoriasApi=signal<Categoria[]>([]);
   readonly matriculasApi=signal<Matricula[]>([]);
+  readonly matriculaConfirmada=signal<{id:string;estado:string}|null>(null);
   readonly pagosApi=signal<Pago[]>([]); readonly horarios=signal<Horario[]>([]); readonly sedes=signal<Sede[]>([]);
   readonly cursoActual=signal<Curso|null>(null); readonly cursoEditando=signal<Curso|null>(null);
   readonly categoriaEditando=signal<Categoria|null>(null); readonly cursoSeleccionado=signal('');
@@ -205,9 +218,23 @@ export class AcademiaPanel implements OnInit {
   titulo():string{return ({matricula:'Formaliza tu matrícula',confirmacion:'Confirmación',matriculas:'Mis matrículas',estudiantes:'Estudiantes',pagos:'Gestión de pagos',cursos:'Administrar cursos',categorias:'Categorías',horarios:'Horarios',sedes:'Sedes',integraciones:'Conexiones API'} as Record<string,string>)[this.vista]||'Mi espacio';}
   subtitulo():string{return this.vista==='integraciones'?'Consulta Catálogo, Indexer, Matrículas y Pagos.':'Gestiona tus cursos y operaciones desde una única plataforma.';}
   ngOnInit():void {
+    if(this.vista==='confirmacion' && isPlatformBrowser(this.platformId)){
+      const raw=window.history.state?.['solicitud'];
+      if(raw && typeof raw.id==='string' && typeof raw.estado==='string'){
+        this.matriculaConfirmada.set({id:raw.id,estado:raw.estado});
+      }
+    }
     if(this.vista==='matricula'){
       const id=this.route.snapshot.paramMap.get('idCurso')||'';
-      this.api.curso(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:c=>this.cursoActual.set(c),error:()=>this.error.set('No se pudo recuperar el curso.')});
+      this.cargando.set(true);
+      this.api.curso(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next:c=>{
+          if(c.status==='PUBLISHED')this.cursoActual.set(c);
+          else this.error.set('Este curso todavía no está publicado.');
+          this.cargando.set(false);
+        },
+        error:e=>{this.fallo(e);this.cargando.set(false);}
+      });
     }
     if(['cursos','horarios','sedes'].includes(this.vista))this.cargarCursos();
     if(['cursos','categorias'].includes(this.vista))this.cargarCategorias();
@@ -230,29 +257,29 @@ export class AcademiaPanel implements OnInit {
     this.api.todasCategorias(0,100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:p=>this.categoriasApi.set(p.content),error:e=>this.fallo(e)});
   }
   registrarMatricula():void {
+    if(this.cargando())return; // Evita peticiones duplicadas por doble clic.
     const c=this.cursoActual(),f=this.formMatricula;
-    if(!c||f.nombre.trim().length<3||!/^\S+@\S+\.\S+$/.test(f.correo)||!f.documento.trim()){
-      this.error.set('Completa el nombre, correo válido y documento.');return;
+    if(!c || c.status!=='PUBLISHED' || c.availableSlots<=0){
+      this.error.set('El curso no está publicado o no dispone de cupos.');return;
     }
-    if(f.tipoDocumento==='DNI'&&!/^\d{8}$/.test(f.documento)){
-      this.error.set('El DNI debe tener 8 dígitos.');return;
+    if(f.nombre.trim().length<3 || !/^\S+@\S+\.\S+$/.test(f.correo) || !f.documento.trim()){
+      this.error.set('Completa el nombre, correo válido y número de documento.');return;
     }
-    const m:Matricula={
-      id:String(Date.now()),courseId:c.id,courseName:c.name,nombre:f.nombre.trim(),correo:f.correo.trim(),
-      tipoDocumento:f.tipoDocumento,documento:f.documento.trim(),telefono:f.telefono.trim(),
-      fecha:new Date().toISOString(),estado:'PENDIENTE',importe:c.price,origen:'DEMO'
-    };
-    if(this.demo.modo()==='demo'){
-      this.demo.registrarMatricula(m);
-      this.router.navigate(['/confirmacion']);
-      return;
+    if(f.tipoDocumento==='DNI' && !/^\d{8}$/.test(f.documento)){
+      this.error.set('El DNI debe contener exactamente ocho dígitos.');return;
     }
-    this.cargando.set(true);
+    this.error.set('');this.cargando.set(true);
     this.api.registrarMatricula({
       courseId:c.id,nombre:f.nombre.trim(),correo:f.correo.trim(),telefono:f.telefono.trim(),
       tipoDocumento:f.tipoDocumento,documento:f.documento.trim()
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:()=>{this.cargando.set(false);this.router.navigate(['/confirmacion']);},
+      next:respuesta=>{
+        this.cargando.set(false);
+        // Conservar solo el identificador y estado en el historial, sin DNI/correo.
+        void this.router.navigate(['/confirmacion'],{
+          state:{solicitud:{id:respuesta.id,estado:respuesta.estado}}
+        });
+      },
       error:e=>{this.cargando.set(false);this.fallo(e);}
     });
   }
