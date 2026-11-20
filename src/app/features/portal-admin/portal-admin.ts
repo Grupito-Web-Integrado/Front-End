@@ -25,7 +25,7 @@ import { AcademiaApiService } from '../../core/academia-api.service';
     <div class="admin-stats">
       <div class="student-stat"><span>Cursos</span><strong>{{cursos() ?? '—'}}</strong><small>Catálogo</small></div>
       <div class="student-stat"><span>Categorías</span><strong>{{categorias() ?? '—'}}</strong><small>Catálogo</small></div>
-      <div class="student-stat"><span>Solicitudes</span><strong>{{matriculas() ?? '—'}}</strong><small>Matrículas</small></div>
+      <div class="student-stat"><span>Solicitudes recientes</span><strong>{{matriculas() ?? '—'}}</strong><small>Hasta 200 registros de Matrículas</small></div>
       <div class="student-stat"><span>Movimientos de pago</span><strong>{{pagos() ?? '—'}}</strong><small>Pagos</small></div>
     </div>
     <div class="portal-actions">

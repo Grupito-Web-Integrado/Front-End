@@ -42,11 +42,13 @@ import { Matricula } from '../../core/academia.models';
             <select [ngModel]="filtro()" (ngModelChange)="filtro.set($event)">
               <option value="">Todos los estados</option>
               <option value="CREADA">Creada</option>
+              <option value="PENDIENTE">Pendiente</option>
               <option value="PENDIENTE_DE_PAGO">Pendiente de pago</option>
               <option value="PAGADA">Pagada</option>
               <option value="CONFIRMADA">Confirmada</option>
               <option value="CANCELADA">Cancelada</option>
               <option value="PAGO_RECHAZADO">Pago rechazado</option>
+              <option value="PAGO_EXPIRADO">Pago expirado</option>
             </select>
           </label>
           <div class="table-scroll"><table>
