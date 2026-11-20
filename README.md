@@ -2,7 +2,7 @@
 
 La documentación de cierre se encuentra en [Casos de uso, pruebas y arranque](docs/ENTREGA_FRONTEND_20-11-2026.md).
 
-Para **ver el frontend** sin Docker ni datos de ejemplo, ejecuta `VER_FRONTEND.bat`. Para **levantar los microservicios reales**, primero revisa `infra/DIAGNOSTICO_GENERAL.ps1` y después usa `ABRIR_MYACADEMY.bat` con Docker Desktop funcionando. El acceso es por Keycloak y roles `ESTUDIANTE` y `ADMIN`.
+Para **ver el frontend** sin Docker ni datos de ejemplo, ejecuta `VER_FRONTEND.bat`. Para **levantar los microservicios reales**, primero revisa `infra/DIAGNOSTICO_GENERAL.ps1` y después usa `ABRIR_MYACADEMY.bat` con Docker Desktop funcionando. El acceso es por Keycloak y roles `ESTUDIANTE` y `ADMIN`. Si el formulario de identidad exige completar nombre y apellido de cuentas de prueba antiguas, usa `infra/COMPLETAR_PERFILES_KEYCLOAK.ps1 -Confirmar` (sin cambiar claves).
 
 ---
 # MyAcademy · Frontend Angular conectado a microservicios

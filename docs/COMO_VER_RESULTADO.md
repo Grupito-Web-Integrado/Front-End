@@ -32,3 +32,14 @@ docker info --format '{{.OSType}}'
 .\infra\CREAR_CUENTAS_KEYCLOAK.ps1 -Confirmar
 .\infra\VERIFICAR.ps1
 ```
+
+## Corrección definitiva del formulario obligatorio de Keycloak
+
+La prueba E2E de navegador reprodujo un caso real: después de escribir usuario y contraseña, Keycloak detenía el acceso en **Update Account Information** porque las cuentas se creaban sin `firstName` y `lastName`. El script `CREAR_CUENTAS_KEYCLOAK.ps1` ahora define ambos campos desde el alta. En un entorno previamente inicializado, sin cambiar contraseñas ni permisos, se puede reparar solo esas dos cuentas de prueba:
+
+```powershell
+.\infra\COMPLETAR_PERFILES_KEYCLOAK.ps1
+.\infra\COMPLETAR_PERFILES_KEYCLOAK.ps1 -Confirmar
+```
+
+Esta corrección se aplica únicamente a `estudiante.myacademy` y `administrador.myacademy` cuando ya existen; no se sobrescribe ninguna otra cuenta ni el trabajo de otro integrante.
