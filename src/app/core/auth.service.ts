@@ -80,9 +80,10 @@ export class AuthService {
     const client = this.adapter;
     this.autenticado.set(client?.authenticated === true);
     this.usuario.set(String(client?.tokenParsed?.['preferred_username'] || ''));
+    // El backend de MyAcademy valida realm_access.roles.
+    // No mezclar roles de otros clientes Keycloak: podrían conceder un ADMIN visual falso.
     const realmRoles = client?.realmAccess?.roles || [];
-    const clientRoles = Object.values(client?.resourceAccess || {}).flatMap(r => r.roles || []);
-    this.roles.set([...new Set([...realmRoles, ...clientRoles])]);
+    this.roles.set([...new Set(realmRoles)]);
   }
 
   private limpiar(): void {
@@ -95,7 +96,7 @@ export class AuthService {
     return this.roles().some(r => r.toUpperCase() === rol.toUpperCase());
   }
 
-  async iniciarSesion(returnUrl = '/mis-matriculas', perfil: 'ESTUDIANTE' | 'ADMIN' = 'ESTUDIANTE'): Promise<void> {
+  async iniciarSesion(returnUrl = '', perfil: 'ESTUDIANTE' | 'ADMIN' = 'ESTUDIANTE'): Promise<void> {
     await this.iniciar();
     if (this.estado() !== 'disponible' || !this.adapter) {
       throw new Error(this.error() || 'Keycloak no responde en http://localhost:8180. Inicia la infraestructura e inténtalo nuevamente.');
@@ -107,11 +108,10 @@ export class AuthService {
     } catch {
       throw new Error('No se puede conectar a Keycloak en '+this.discoveryUrl+'. Inicia Docker Desktop y el servicio Keycloak (puerto 8180).');
     }
-    const ruta = returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/mis-matriculas';
-    // No se concede un rol desde el frontend: solo se solicita autenticación.
-    // Tras el callback, las rutas validan el rol real contenido en el JWT.
-    const destino = perfil === 'ADMIN' ? '/gestion/cursos' : '/mis-matriculas';
-    await this.adapter.login({ redirectUri: window.location.origin + (ruta || destino), prompt: 'login' });
+    const destino = perfil === 'ADMIN' ? '/gestion' : '/mi-espacio';
+    const ruta = returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : destino;
+    // El botón solo selecciona el destino, jamás concede roles.
+    await this.adapter.login({ redirectUri: window.location.origin + ruta, prompt: 'login' });
   }
 
   async cerrarSesion(): Promise<void> {

@@ -8,6 +8,9 @@
     @if(auth.autenticado()){
       <p>Sesión activa: <strong>{{ auth.usuario() }}</strong></p>
       <p>Permisos: {{ auth.roles().join(', ') || 'Sin rol asignado' }}</p>
+      @if(!esAdmin() && !esEstudiante()){
+        <p role="alert" class="error-banner">Esta cuenta está autenticada, pero no tiene el rol ESTUDIANTE ni ADMIN de MyAcademy. Solicita al administrador del realm que asigne el permiso correspondiente.</p>
+      }
       <div class="button-row">
         @if(esAdmin()){<a class="btn-primary" routerLink="/gestion">Ir al panel administrativo</a>}
         @if(esEstudiante()){<a class="btn-primary" routerLink="/mi-espacio">Ir a mi espacio de estudiante</a>}
