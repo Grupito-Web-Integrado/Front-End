@@ -22,15 +22,25 @@ export class AcademiaApiService {
       catchError(() => of(resumen))
     )));
   }
-  categoriasActivasCompletas(): Observable<Categoria[]> {
-    return this.categorias(0,100).pipe(switchMap(primera => {
-      const total = Math.min(Math.max(primera.totalPages,1),100);
-      if (total <= 1) return of(primera.content);
-      const adicionales = Array.from({length:total-1},(_,i)=>this.categorias(i+1,100));
-      return forkJoin(adicionales).pipe(map(resto => [
-        ...primera.content, ...resto.flatMap(p=>p.content)
+  /** Todas las páginas, con límite de seguridad para no inundar el backend. */
+  private recogerPaginas<T>(obtener:(pagina:number)=>Observable<PageResult<T>>, maxPages=100):Observable<T[]>{
+    return obtener(0).pipe(switchMap(primera=>{
+      const total=Math.min(Math.max(primera.totalPages,1),maxPages);
+      if(total<=1)return of(primera.content);
+      const restantes=Array.from({length:total-1},(_,i)=>obtener(i+1));
+      return forkJoin(restantes).pipe(map(paginas=>[
+        ...primera.content,...paginas.flatMap(p=>p.content)
       ]));
     }));
+  }
+  categoriasActivasCompletas():Observable<Categoria[]>{
+    return this.recogerPaginas(p=>this.categorias(p,100));
+  }
+  todasCategoriasCompletas():Observable<Categoria[]>{
+    return this.recogerPaginas(p=>this.todasCategorias(p,100));
+  }
+  todosCursosAdministracion():Observable<Curso[]>{
+    return this.recogerPaginas(p=>this.buscarCriterios({},p,100),50);
   }
   cursosPublicados(page = 0, size = 50): Observable<PageResult<Curso>> {
     return this.http.get<PageResult<Curso>>(`${this.catalogo}/courses/published`, { params: { page, size } });
