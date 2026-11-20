@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Subject, of, switchMap, debounceTime, distinctUntilChanged, catchError, map } from 'rxjs';
+import { Subject, of, forkJoin, switchMap, debounceTime, distinctUntilChanged, catchError, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AcademiaApiService } from '../../core/academia-api.service';
 import { AcademiaDemoService } from '../../core/academia-demo.service';
@@ -52,7 +52,7 @@ import { portadaCurso } from '../../core/course-cover';
     </section>
     <section class="stats-strip">
       <div class="shell stats-grid">
-        <div><strong>{{ cantidadTotal() }}+</strong><span>Cursos para explorar</span></div>
+        <div><strong>{{ cantidadTotal() }}</strong><span>Cursos para explorar</span></div>
         <div><strong>{{ categorias().length }}</strong><span>Áreas de aprendizaje</span></div>
         <div><strong>3</strong><span>Modalidades disponibles</span></div>
         <div><strong>24/7</strong><span>Catálogo en línea</span></div>
@@ -80,35 +80,37 @@ import { portadaCurso } from '../../core/course-cover';
 
     <section class="shell section-block" id="cursos">
       <div class="section-heading"><div><span class="section-overline">CURSOS PARA TI</span><h2>Encuentra lo que te apasiona</h2><p>Aprende con contenido claro, práctico y actualizado.</p></div>
-        <span class="results-pill">{{ cursosVisibles().length }} resultados</span>
+        <span class="results-pill">{{ cursosFiltrados().length }} resultados</span>
       </div>
       <div class="filters-panel">
         <label class="filter-group"><span>Modalidad</span>
-          <select [ngModel]="modalidad()" (ngModelChange)="modalidad.set($event)">
+          <select [ngModel]="modalidad()" (ngModelChange)="cambiarModalidad($event)">
             <option value="">Todas las modalidades</option><option value="ONLINE">Online</option><option value="HYBRID">Híbrida</option><option value="IN_PERSON">Presencial</option>
           </select>
         </label>
         <label class="filter-group"><span>Precio máximo</span>
-          <select [ngModel]="precioMax()" (ngModelChange)="precioMax.set(+$event)">
+          <select [ngModel]="precioMax()" (ngModelChange)="cambiarPrecio(+$event)">
             <option [ngValue]="0">Cualquier precio</option><option [ngValue]="150">Hasta S/ 150</option><option [ngValue]="200">Hasta S/ 200</option><option [ngValue]="250">Hasta S/ 250</option>
           </select>
         </label>
         <label class="filter-group"><span>Ordenar por</span>
-          <select [ngModel]="orden()" (ngModelChange)="orden.set($event)">
+          <select [ngModel]="orden()" (ngModelChange)="cambiarOrden($event)">
             <option value="relevancia">Relevancia</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option><option value="nombre">Nombre A–Z</option>
           </select>
         </label>
-        <label class="filter-check"><input type="checkbox" [ngModel]="soloCupos()" (ngModelChange)="soloCupos.set($event)"> Con cupos</label>
+        <label class="filter-check"><input type="checkbox" [ngModel]="soloCupos()" (ngModelChange)="cambiarCupos($event)"> Con cupos</label>
         <button class="clear-filters" (click)="limpiar()">Limpiar filtros</button>
       </div>
       @if (cargando()) { <div class="empty-state">Buscando cursos disponibles…</div> }
-      @if (error()) { <div class="error-banner" role="alert">{{ error() }} <a routerLink="/gestion/integraciones">Revisar conexiones</a></div> }
+      @if (error()) { <div class="error-banner" role="alert">{{ error() }} <button class="table-link" type="button" (click)="cargarCursos()">Reintentar</button></div> }
+      @if (errorCategorias()) { <p class="mode-note" role="alert">{{errorCategorias()}} <button class="table-link" type="button" (click)="cargarCategorias()">Reintentar categorías</button></p> }
+      @if (avisoLimite()) { <p class="mode-note">{{avisoLimite()}}</p> }
       @if (!cargando()) {
         <div class="courses-grid">
           @for (curso of cursosVisibles(); track curso.id) {
             <app-curso-card [curso]="curso" [categoria]="nombreCategoria(curso)"/>
           } @empty {
-            <div class="empty-state"><strong>No encontramos cursos con esos filtros.</strong><span>Prueba otra búsqueda o cambia de categoría.</span><button class="btn-outline" (click)="limpiar()">Mostrar todos</button></div>
+            <div class="empty-state"><strong>{{error()?'No fue posible consultar el catálogo.':'No hay cursos publicados con estos filtros.'}}</strong><span>{{error()?'Comprueba la conexión del microservicio.':'Prueba otra búsqueda o cambia de categoría.'}}</span><button class="btn-outline" (click)="limpiar()">Mostrar todos</button></div>
           }
         </div>
         @if (totalPaginas()>1) {
@@ -165,6 +167,7 @@ export class CatalogoAvanzado implements OnInit {
   private destroyRef = inject(DestroyRef);
   readonly vista = this.route.snapshot.data['vista'] === 'detalle' ? 'detalle' : 'catalogo';
   readonly consulta = signal('');
+  readonly consultaAplicada = signal('');
   readonly mostrarTodasCategorias = signal(false);
   readonly categoriaSeleccionada = signal('');
   readonly modalidad = signal('');
@@ -179,27 +182,36 @@ export class CatalogoAvanzado implements OnInit {
   readonly sedes = signal<Sede[]>([]);
   readonly cargando = signal(false);
   readonly error = signal('');
+  readonly errorCategorias = signal('');
+  readonly avisoLimite = signal('');
   readonly pagina = signal(0);
-  readonly totalPaginas = signal(1);
   private busquedas = new Subject<string>();
   readonly categorias = computed(() => this.categoriasApi());
   readonly categoriasPrincipales = computed(() => this.mostrarTodasCategorias() ? this.categorias() : this.categorias().slice(0,6));
-  readonly cursosVisibles = computed(() => {
-    const q = this.consulta().trim().toLowerCase();
+  private readonly porPagina=12;
+  private solicitudVersion=0;
+  readonly cursosFiltrados = computed(() => {
+    const q = this.consultaAplicada().trim().toLowerCase();
     const modo = this.modalidad();
     const cat = this.categoriaSeleccionada();
     const limit = this.precioMax();
     const selected = this.cursosApi()
       .filter(c => c.status === 'PUBLISHED')
-      .filter(c => !cat || c.categoryId===cat || c.categories?.some(x=>x.id===cat))
-      .filter(c => !q || [c.name,c.code,c.description||''].join(' ').toLowerCase().includes(q))
-      .filter(c => !modo || c.modality===modo)
-      .filter(c => !limit || c.price<=limit)
-      .filter(c => !this.soloCupos() || c.availableSlots>0);
+      .filter(c => !cat || c.categoryId === cat || c.categories?.some(x => x.id === cat))
+      .filter(c => !q || [c.name,c.code,c.description || ''].join(' ').toLowerCase().includes(q))
+      .filter(c => !modo || c.modality === modo)
+      .filter(c => !limit || c.price <= limit)
+      .filter(c => !this.soloCupos() || c.availableSlots > 0);
     const sort = this.orden();
-    return [...selected].sort((a,b) => sort==='precio-asc' ? a.price-b.price : sort==='precio-desc' ? b.price-a.price : sort==='nombre' ? a.name.localeCompare(b.name) : 0);
+    return [...selected].sort((a,b) =>
+      sort === 'precio-asc' ? a.price-b.price :
+      sort === 'precio-desc' ? b.price-a.price :
+      sort === 'nombre' ? a.name.localeCompare(b.name) : 0);
   });
-  readonly cantidadTotal = computed(() => this.cursosApi().length);
+  readonly totalPaginas = computed(() => Math.max(1,Math.ceil(this.cursosFiltrados().length / this.porPagina)));
+  readonly cursosVisibles = computed(() =>
+    this.cursosFiltrados().slice(this.pagina()*this.porPagina,(this.pagina()+1)*this.porPagina));
+  readonly cantidadTotal = computed(() => this.cursosFiltrados().length);
 
   ngOnInit(): void {
     this.busquedas.pipe(
@@ -235,6 +247,7 @@ export class CatalogoAvanzado implements OnInit {
   buscarRapido(text: string):void {this.escribirBusqueda(text);this.ejecutarBusqueda();}
   ejecutarBusqueda(): void {
     this.sugerencias.set([]);this.pagina.set(0);
+    this.consultaAplicada.set(this.consulta().trim());
     this.cargarCursos();
     if(typeof document!=='undefined')document.getElementById('cursos')?.scrollIntoView({behavior:'smooth'});
   }
@@ -244,33 +257,77 @@ export class CatalogoAvanzado implements OnInit {
     if(typeof document!=='undefined')document.getElementById('cursos')?.scrollIntoView({behavior:'smooth'});
   }
   limpiar(): void {
-    this.consulta.set('');this.categoriaSeleccionada.set('');this.modalidad.set('');
+    this.consulta.set('');this.consultaAplicada.set('');this.categoriaSeleccionada.set('');this.modalidad.set('');
     this.precioMax.set(0);this.soloCupos.set(false);this.orden.set('relevancia');this.pagina.set(0);
     this.cargarCursos();
   }
-  cambiarPagina(d: number):void {this.pagina.update(p=>Math.max(0,Math.min(this.totalPaginas()-1,p+d)));this.cargarCursos();}
-  private cargarCategorias():void {
+  cambiarPagina(d: number):void {
+    this.pagina.update(p=>Math.max(0,Math.min(this.totalPaginas()-1,p+d)));
+    this.enriquecerVista();
+  }
+  cambiarModalidad(v:string):void {this.modalidad.set(v);this.pagina.set(0);this.enriquecerVista();}
+  cambiarPrecio(v:number):void {this.precioMax.set(v);this.pagina.set(0);this.enriquecerVista();}
+  cambiarOrden(v:string):void {this.orden.set(v);this.pagina.set(0);this.enriquecerVista();}
+  cambiarCupos(v:boolean):void {this.soloCupos.set(v);this.pagina.set(0);this.enriquecerVista();}
+  cargarCategorias():void {
+    this.errorCategorias.set('');
     this.api.categoriasActivasCompletas().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next:categorias=>this.categoriasApi.set(categorias),
-      error:()=>this.error.set('No se pudieron cargar las categorías de la API.')
+      error:()=>this.errorCategorias.set('No se pudieron cargar las categorías.')
     });
   }
-  private cargarCursos():void {
-    this.cargando.set(true);this.error.set('');
+  cargarCursos():void {
+    const version=++this.solicitudVersion;
+    this.cargando.set(true);this.error.set('');this.avisoLimite.set('');
     const cat=this.categoriaSeleccionada();
-    const q=this.consulta().trim();
-    const req=cat ? this.api.cursosPorCategoria(cat,this.pagina(),12)
-      : q ? this.api.buscarCursos(q,this.pagina(),12)
-      : this.api.cursosPublicados(this.pagina(),12);
-    req.pipe(
-      switchMap(p => this.api.enriquecerCursos(p.content).pipe(map(items=>({page:p,items})))),
+    const q=this.consultaAplicada().trim();
+    const consultar=(page:number) =>
+      cat ? this.api.cursosPorCategoria(cat,page,100) :
+      q ? this.api.buscarCursos(q,page,100) :
+      this.api.cursosPublicados(page,100);
+    consultar(0).pipe(
+      switchMap(primera=>{
+        // Reunir páginas antes de aplicar filtros/ordenamiento para evitar
+        // resultados vacíos o conteos incorrectos por filtrar solo 12 registros.
+        const limite=Math.min(Math.max(primera.totalPages,1),10);
+        const restantes=Array.from({length:limite-1},(_,i)=>consultar(i+1));
+        return (restantes.length?forkJoin(restantes):of([])).pipe(
+          map(pages=>({items:[...primera.content,...pages.flatMap(p=>p.content)],
+            incompleto:primera.totalPages>limite})));
+      }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
-      next:({page,items})=>{
-        this.cursosApi.set(cat && q ? items.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())) : items);
-        this.totalPaginas.set(Math.max(1,page.totalPages));this.cargando.set(false);
+      next:({items,incompleto})=>{
+        if(version!==this.solicitudVersion)return;
+        this.cursosApi.set(items.map(c=>({...c,categoryId:cat || c.categoryId})));
+        this.pagina.set(0);
+        this.avisoLimite.set(incompleto?'El catálogo es muy amplio: muestra los primeros 1 000 registros. Refina tu búsqueda para ver otros cursos.':'');
+        this.cargando.set(false);
+        this.enriquecerVista();
       },
-      error:()=>{this.cursosApi.set([]);this.error.set('Catálogo no responde. Verifica el microservicio, Elasticsearch y el Indexer.');this.cargando.set(false);}
+      error:()=>{
+        if(version!==this.solicitudVersion)return;
+        this.cursosApi.set([]);
+        this.error.set('El servicio Catálogo no responde. Revisa la API, Elasticsearch y el Indexer.');
+        this.cargando.set(false);
+      }
     });
   }
+  private enriquecerVista():void {
+    const visibles=this.cursosVisibles().filter(c=>!c.categories?.length);
+    if(visibles.length===0)return;
+    const version=this.solicitudVersion;
+    this.api.enriquecerCursos(visibles).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:detalles=>{
+        if(version!==this.solicitudVersion)return;
+        const porId=new Map(detalles.map(c=>[c.id,c]));
+        this.cursosApi.update(items=>items.map(c=>{
+          const detalle=porId.get(c.id);
+          return detalle?{...c,...detalle,categoryId:detalle.categoryId || c.categoryId}:c;
+        }));
+      },
+      error:()=>{} // El resumen sigue siendo visible si algún detalle falla.
+    });
+  }
+
 }
