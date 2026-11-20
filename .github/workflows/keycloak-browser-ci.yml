@@ -51,10 +51,10 @@ jobs:
           KC="/opt/keycloak/bin/kcadm.sh"
           comp() { docker compose --env-file infra/.env -f infra/compose.yml exec -T keycloak "$KC" "$@"; }
           comp config credentials --server http://localhost:8080 --realm master --user "$KEYCLOAK_ADMIN_USERNAME" --password "$KEYCLOAK_ADMIN_PASSWORD"
-          comp create users -r myacademy -s username=e2e_student -s enabled=true -s email=e2e_student@example.invalid -s emailVerified=true
+          comp create users -r myacademy -s username=e2e_student -s enabled=true -s email=e2e_student@example.invalid -s emailVerified=true -s firstName=Estudiante -s lastName=MyAcademy
           comp set-password -r myacademy --username e2e_student --new-password "$E2E_STUDENT_PASSWORD"
           comp add-roles -r myacademy --uusername e2e_student --rolename ESTUDIANTE
-          comp create users -r myacademy -s username=e2e_admin -s enabled=true -s email=e2e_admin@example.invalid -s emailVerified=true
+          comp create users -r myacademy -s username=e2e_admin -s enabled=true -s email=e2e_admin@example.invalid -s emailVerified=true -s firstName=Administrador -s lastName=MyAcademy
           comp set-password -r myacademy --username e2e_admin --new-password "$E2E_ADMIN_PASSWORD"
           comp add-roles -r myacademy --uusername e2e_admin --rolename ADMIN
       - name: Instalar frontend y navegador de pruebas

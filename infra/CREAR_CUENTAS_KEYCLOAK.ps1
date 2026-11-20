@@ -50,7 +50,8 @@ foreach($u in $usuarios){
 $result=@()
 foreach($u in $usuarios){
   $pwd=NuevaClave
-  & docker @common create users -r myacademy -s ('username='+$u.nombre) -s 'enabled=true' -s 'emailVerified=true'
+  $persona=if($u.rol -eq 'ADMIN'){'Administrador'}else{'Estudiante'}
+  & docker @common create users -r myacademy -s ('username='+$u.nombre) -s 'enabled=true' -s 'emailVerified=true' -s ('firstName='+$persona) -s 'lastName=MyAcademy'
   if($LASTEXITCODE -ne 0){throw "No se pudo crear $($u.nombre)"}
   & docker @common set-password -r myacademy --username $u.nombre --new-password $pwd
   if($LASTEXITCODE -ne 0){throw "No se pudo definir contraseña para $($u.nombre)"}
