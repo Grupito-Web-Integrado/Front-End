@@ -24,6 +24,7 @@ jobs:
       - run: npx ng test --watch=false --include=src/app/core/academia-api.service.spec.ts
       - run: npx ng test --watch=false --include=src/app/features/portal-estudiante/portal-estudiante.spec.ts
       - run: npx ng test --watch=false --include=src/app/features/portal-admin/portal-admin.spec.ts
+      - run: npx ng test --watch=false --include=src/app/core/identity.guard.spec.ts
       - run: npm run build
       - name: Adjuntar compilación para visualización local
         uses: actions/upload-artifact@v4
