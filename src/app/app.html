@@ -4,8 +4,9 @@
     <nav class="main-nav" aria-label="Navegación principal">
       <a routerLink="/inicio" routerLinkActive="active">Inicio</a>
       <a routerLink="/catalogo" routerLinkActive="active">Cursos</a>
-      @if(esEstudiante()){<a routerLink="/mis-matriculas" routerLinkActive="active">Mis matrículas</a>}
+      @if(esEstudiante()){<a routerLink="/mi-espacio" routerLinkActive="active">Mi espacio</a>}
       @if(puedeAdministrar()){
+      <a routerLink="/gestion" routerLinkActive="active">Panel</a>
       <a routerLink="/pagos" routerLinkActive="active">Pagos</a>
       <div class="nav-dropdown"><span>Gestión ▾</span>
         <div class="nav-dropdown-items">
@@ -27,7 +28,7 @@
 <main><router-outlet /></main>
 <footer class="site-footer"><div class="shell footer-main">
   <div><a class="site-logo" routerLink="/inicio"><span class="logo-icon">M<span>✦</span></span><span>my<span class="logo-emphasis">academy</span></span></a><p>Un espacio para descubrir, aprender y construir nuevas oportunidades.</p></div>
-  <div><h3>Aprender</h3><a routerLink="/catalogo">Todos los cursos</a><a routerLink="/mis-matriculas">Mis matrículas</a></div>
-  <div><h3>Gestión</h3><a routerLink="/gestion/cursos">Cursos y sus horarios/sedes</a><a routerLink="/gestion/categorias">Categorías</a>@if(puedeAdministrar()){<a routerLink="/gestion/integraciones">Estado de servicios</a>}</div>
+  <div><h3>Aprender</h3><a routerLink="/catalogo">Todos los cursos</a>@if(esEstudiante()){<a routerLink="/mi-espacio">Mi espacio</a>}</div>
+  <div><h3>MyAcademy</h3>@if(puedeAdministrar()){<a routerLink="/gestion">Administración</a><a routerLink="/gestion/cursos">Gestión de cursos</a><a routerLink="/gestion/integraciones">Estado de servicios</a>} @else {<a routerLink="/login">Acceder a tu cuenta</a><a routerLink="/catalogo">Explorar programas</a>}</div>
   <div><h3>Acerca de</h3><p>Proyecto académico de Desarrollo Web Integrado. Consulta la disponibilidad y condiciones de cada curso antes de matricularte.</p></div>
 </div><div class="shell footer-bottom"><span>© 2026 MyAcademy · Proyecto académico</span><span>Diseñado para aprender, creado para crecer.</span></div></footer>

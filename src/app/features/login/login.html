@@ -9,8 +9,8 @@
       <p>Sesión activa: <strong>{{ auth.usuario() }}</strong></p>
       <p>Permisos: {{ auth.roles().join(', ') || 'Sin rol asignado' }}</p>
       <div class="button-row">
-        @if(esAdmin()){<a class="btn-primary" routerLink="/gestion/cursos">Ir al panel administrativo</a>}
-        @if(esEstudiante()){<a class="btn-primary" routerLink="/mis-matriculas">Ir a mi espacio de estudiante</a>}
+        @if(esAdmin()){<a class="btn-primary" routerLink="/gestion">Ir al panel administrativo</a>}
+        @if(esEstudiante()){<a class="btn-primary" routerLink="/mi-espacio">Ir a mi espacio de estudiante</a>}
         <button class="btn-outline" (click)="salir()">Cerrar sesión</button>
       </div>
     } @else {

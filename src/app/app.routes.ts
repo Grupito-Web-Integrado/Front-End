@@ -4,6 +4,8 @@ import { AcademiaPanel } from './features/academia-panel/academia-panel';
 import { CursoAdmin } from './features/curso-admin/curso-admin';
 import { Login } from './features/login/login';
 import { protegerApi } from './core/identity.guard';
+import { PortalEstudiante } from './features/portal-estudiante/portal-estudiante';
+import { PortalAdmin } from './features/portal-admin/portal-admin';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'inicio' },
@@ -12,8 +14,10 @@ export const routes: Routes = [
   { path: 'curso/:id', component: CatalogoAvanzado, data: { vista: 'detalle' } },
   { path: 'matricula/:idCurso', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'matricula', rol: 'ESTUDIANTE' } },
   { path: 'confirmacion', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'confirmacion', rol: 'ESTUDIANTE' } },
-  { path: 'mis-matriculas', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'matriculas', rol: 'ESTUDIANTE' } },
+  { path: 'mi-espacio', component: PortalEstudiante, canActivate: [protegerApi], data: { rol: 'ESTUDIANTE' } },
+  { path: 'mis-matriculas', component: PortalEstudiante, canActivate: [protegerApi], data: { rol: 'ESTUDIANTE' } },
   { path: 'pagos', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'pagos', rol: 'ADMIN' } },
+  { path: 'gestion', component: PortalAdmin, canActivate: [protegerApi], data: { rol: 'ADMIN' } },
   { path: 'gestion/cursos/:id', component: CursoAdmin, canActivate: [protegerApi], data: { rol: 'ADMIN' } },
   { path: 'gestion/cursos', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'cursos', rol: 'ADMIN' } },
   { path: 'gestion/categorias', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'categorias', rol: 'ADMIN' } },

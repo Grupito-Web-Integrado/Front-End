@@ -24,8 +24,8 @@ export class Login {
     try {
       const requested=this.route.snapshot.queryParamMap.get('returnUrl');
       const valid=requested && requested.startsWith('/') && !requested.startsWith('//');
-      const destiny=perfil==='ADMIN'?'/gestion/cursos':'/mis-matriculas';
-      const target=valid && (perfil==='ADMIN' ? requested.startsWith('/gestion/') || requested.startsWith('/pagos') : requested.startsWith('/matricula/') || requested.startsWith('/mis-matriculas'))
+      const destiny=perfil==='ADMIN'?'/gestion':'/mi-espacio';
+      const target=valid && (perfil==='ADMIN' ? requested.startsWith('/gestion/') || requested.startsWith('/pagos') : requested.startsWith('/matricula/') || requested.startsWith('/mis-matriculas') || requested.startsWith('/mi-espacio'))
         ? requested : destiny;
       await this.auth.iniciarSesion(target,perfil);
     }catch(e){
