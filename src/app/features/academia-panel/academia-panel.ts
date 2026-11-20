@@ -295,7 +295,12 @@ export class AcademiaPanel implements OnInit {
     if(!isPlatformBrowser(this.platformId))return;
     const cols=['ID','Estudiante','Correo','Documento','Curso','Fecha','Estado','Importe'];
     const csv=[cols,...this.matriculasVisibles().map(m=>[m.id,m.nombre,m.correo,m.documento,m.courseName,m.fecha,m.estado,String(m.importe)])]
-      .map(row=>row.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+      // Evita interpretación como fórmulas en Excel/LibreOffice para campos recibidos por API.
+      .map(row=>row.map(value=>{
+        const original=String(value??'');
+        const seguro=/^\s*[=+\-@]/.test(original) ? "'"+original : original;
+        return '"'+seguro.replace(/"/g,'""')+'"';
+      }).join(',')).join('\r\n');
     const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
     const a=document.createElement('a');a.href=url;a.download='matriculas-myacademy.csv';a.click();URL.revokeObjectURL(url);
   }
