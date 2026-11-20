@@ -4,6 +4,12 @@ on:
     branches: [feat/dwi-frontend-gonzalo]
     paths:
       - tests/e2e/**
+      - src/app/app.routes.server.ts
+      - src/app/core/auth.service.ts
+      - src/app/core/identity.guard.ts
+      - src/app/features/login/**
+      - src/app/features/portal-estudiante/**
+      - src/app/features/portal-admin/**
       - .github/workflows/keycloak-browser-ci.yml
   workflow_dispatch:
 
