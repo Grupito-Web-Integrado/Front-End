@@ -1,29 +1,16 @@
-import { APP_INITIALIZER, ApplicationConfig, PLATFORM_ID, inject } from '@angular/core';
+import { ApplicationConfig, provideZonelessChangeDetection, provideAppInitializer, inject } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { isPlatformBrowser } from '@angular/common';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { AuthService } from './core/auth.service';
+import { authInterceptor } from './core/auth.interceptor';
 import { routes } from './app.routes';
-import { keycloak } from './core/keycloak.config';
 
-function initializeKeycloak() {
-  const platformId = inject(PLATFORM_ID);
-  return () => {
-    if (isPlatformBrowser(platformId)) {
-      return keycloak.init({
-        onLoad: 'check-sso',
-        checkLoginIframe: false
-      });
-    }
-    return Promise.resolve();
-  };
-}
-
+// El callback OAuth se procesa sin iframe SSO; las rutas protegidas esperan iniciar() antes de validar roles.
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideZonelessChangeDetection(),
     provideRouter(routes),
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeKeycloak,
-      multi: true
-    }
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideAppInitializer(() => inject(AuthService).iniciar())
   ]
 };

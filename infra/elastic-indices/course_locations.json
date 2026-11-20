@@ -1,0 +1,56 @@
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "courseLocationId": {
+        "type": "keyword"
+      },
+      "courseId": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "address": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "city": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "reference": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "capacity": {
+        "type": "integer"
+      },
+      "createdAt": {
+        "type": "date"
+      },
+      "indexedAt": {
+        "type": "date"
+      }
+    }
+  }
+}

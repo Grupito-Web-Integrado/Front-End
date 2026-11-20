@@ -1,13 +1,31 @@
 import { Routes } from '@angular/router';
-import { Catalogo } from './features/catalogo/catalogo';
-import { Matricula } from './features/matricula/matricula';
-import { Confirmacion } from './features/confirmacion/confirmacion';
+import { CatalogoAvanzado } from './features/catalogo-avanzado/catalogo-avanzado';
+import { AcademiaPanel } from './features/academia-panel/academia-panel';
+import { CursoAdmin } from './features/curso-admin/curso-admin';
 import { Login } from './features/login/login';
+import { protegerApi } from './core/identity.guard';
+import { PortalEstudiante } from './features/portal-estudiante/portal-estudiante';
+import { PortalAdmin } from './features/portal-admin/portal-admin';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'catalogo', pathMatch: 'full' },
+  { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+  { path: 'inicio', component: CatalogoAvanzado },
+  { path: 'catalogo', component: CatalogoAvanzado },
+  { path: 'curso/:id', component: CatalogoAvanzado, data: { vista: 'detalle' } },
+  { path: 'matricula/:idCurso', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'matricula', rol: 'ESTUDIANTE' } },
+  { path: 'confirmacion', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'confirmacion', rol: 'ESTUDIANTE' } },
+  { path: 'mi-espacio', component: PortalEstudiante, canActivate: [protegerApi], data: { rol: 'ESTUDIANTE' } },
+  { path: 'mis-matriculas', component: PortalEstudiante, canActivate: [protegerApi], data: { rol: 'ESTUDIANTE' } },
+  { path: 'pagos', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'pagos', rol: 'ADMIN' } },
+  { path: 'gestion', component: PortalAdmin, canActivate: [protegerApi], data: { rol: 'ADMIN' } },
+  { path: 'gestion/cursos/:id', component: CursoAdmin, canActivate: [protegerApi], data: { rol: 'ADMIN' } },
+  { path: 'gestion/cursos', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'cursos', rol: 'ADMIN' } },
+  { path: 'gestion/categorias', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'categorias', rol: 'ADMIN' } },
+  { path: 'gestion/horarios', redirectTo: 'gestion/cursos' },
+  { path: 'gestion/sedes', redirectTo: 'gestion/cursos' },
+  { path: 'gestion/estudiantes', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'estudiantes', rol: 'ADMIN' } },
+  { path: 'gestion/integraciones', component: AcademiaPanel, canActivate: [protegerApi], data: { vista: 'integraciones', rol: 'ADMIN' } },
   { path: 'login', component: Login },
-  { path: 'catalogo', component: Catalogo },
-  { path: 'matricula/:idCurso', component: Matricula },
-  { path: 'confirmacion', component: Confirmacion }
+  { path: 'acceso-denegado', component: Login, data: { denied: true } },
+  { path: '**', redirectTo: 'inicio' }
 ];

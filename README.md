@@ -1,59 +1,83 @@
-# FrontendPlataformaCursos
+## Entrega frontend · 20 de noviembre de 2026
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.6.
+La documentación de cierre se encuentra en [Casos de uso, pruebas y arranque](docs/ENTREGA_FRONTEND_20-11-2026.md).
 
-## Development server
+Para **ver el frontend** sin Docker ni datos de ejemplo, ejecuta `VER_FRONTEND.bat`. Para **levantar los microservicios reales**, primero revisa `infra/DIAGNOSTICO_GENERAL.ps1` y después usa `ABRIR_MYACADEMY.bat` con Docker Desktop funcionando. El acceso es por Keycloak y roles `ESTUDIANTE` y `ADMIN`. Si el formulario de identidad exige completar nombre y apellido de cuentas de prueba antiguas, usa `infra/COMPLETAR_PERFILES_KEYCLOAK.ps1 -Confirmar` (sin cambiar claves).
 
-To start a local development server, run:
+---
+# MyAcademy · Frontend Angular conectado a microservicios
 
-```bash
-ng serve
+Proyecto académico de Desarrollo Web Integrado (UTP). Código en rama `feat/dwi-frontend-gonzalo`, pendiente de revisión en Pull Request hacia `feat/premium-frontend`.
+
+## Autenticación y perfiles
+
+**Ya no hay selector DEMO ni permisos simulados.** Desde `/login` hay dos accesos: **Estudiante** y **Administrador**. Ambos redirigen al mismo Keycloak (realm `myacademy`, cliente `myacademy-web`). El rol real del JWT determina qué pantallas se habilitan. Elegir un botón **no crea ni otorga un rol**.
+
+Se retiró la comprobación silenciosa por iframe que provocaba `Timeout when waiting for 3rd party check iframe message`. El adaptador inicia sin ese iframe y procesa el código OAuth cuando vuelve de Keycloak. Si Keycloak está apagado, la autenticación no puede completarse: no existe acceso alternativo ni perfiles falsos.
+
+## Ejecutarlo en Windows
+
+Requisitos: Docker Desktop con motor Linux, JDK 21 recomendado (JDK 24 aceptado con advertencia de compatibilidad), Git, Node 22.23.5 (fnm), memoria suficiente para Kafka, Elasticsearch y Keycloak. Trabaja en la carpeta `Front-End`:
+
+```powershell
+git fetch origin
+git switch feat/dwi-frontend-gonzalo
+git pull --ff-only
+
+# Revisar primero: no modifica repositorios
+.\infra\PREPARAR_BACKENDS.ps1
+
+# Aplicar la integración en ramas LOCALES, sin sobrescribir ramas ajenas
+.\infra\PREPARAR_BACKENDS.ps1 -Confirmar
+
+# Arrancar infraestructura, backend y frontend
+.\ABRIR_MYACADEMY.bat
+
+# En otra terminal: crear cuentas con roles reales en Keycloak si aún no existen
+.\infra\CREAR_CUENTAS_KEYCLOAK.ps1 -Confirmar
+
+# Comprobar estado de todos los servicios
+.\infra\VERIFICAR.ps1
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+`PREPARAR_BACKENDS.ps1` se detiene si hay cambios locales pendientes en Catálogo, Matrículas o Pagos, y crea ramas `feat/myacademy-integracion-local` para no alterar el trabajo del equipo. Los adaptadores son provisionales y requieren revisión independiente antes de integrarse en las ramas originales.
 
-## Code scaffolding
+Al arrancar: http://localhost:4200/login. Keycloak: http://localhost:8180/admin. La inicialización de `infra/.env` genera contraseñas aleatorias; **no subas ese archivo a GitHub**. El script de cuentas genera claves que solo deben guardarse en un lugar privado; se utiliza una única vez por entorno.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Rutas principales
 
-```bash
-ng generate component component-name
+| Perfil | Ruta | Operación |
+| --- | --- | --- |
+| Público | `/inicio`, `/catalogo`, `/curso/:id` | Cursos publicados, categorías, búsqueda, información y cupos reales |
+| Estudiante (ESTUDIANTE) | `/mis-matriculas`, `/matricula/:idCurso` | Solicitudes y seguimiento de matrículas |
+| Administrador (ADMIN) | `/gestion/cursos`, `/gestion/cursos/:id` | Gestión de cursos y relaciones |
+| Administrador (ADMIN) | `/gestion/categorias`, `/gestion/estudiantes`, `/pagos` | Categorías, matrículas y registros del servicio de pagos |
+| Administrador (ADMIN) | `/gestion/integraciones` | Diagnóstico de cuatro microservicios |
+
+No hay datos ficticios de respaldo: si Catálogo no responde, se verá el error. Si el servidor no contiene cursos publicados, el catálogo estará vacío hasta crearlos y publicarlos.
+
+## Conexión con el Indexer de Joker, sin alterar su código
+
+- Repositorio original: https://github.com/Grupito-Web-Integrado/Catalog-Indexer-
+- Se clona y ejecuta **sin modificaciones** desde su consola Maven propia en el puerto local 8084.
+- Consume Kafka (`catalog.COURSE.events`, `catalog.COURSE_CATEGORY.events`, `catalog.COURSE_SCHEDULE.events`, `catalog.COURSE_LOCATION.events`) y actualiza Elasticsearch.
+- Angular consulta la API de Catálogo en el puerto 8080; Catálogo utiliza Elasticsearch. No se inventa una API de búsqueda en el Indexer.
+- `/api/indexer/health` se envía a `http://127.0.0.1:8084/actuator/health` para comprobar Kafka y Elasticsearch desde el panel administrativo. Los puertos 8081 y 8082 corresponden a Pagos y Matrículas.
+- `proxy.conf.json` utiliza reglas Vite `/api/v1/**`, `/api/pagos/**`, `/api/matriculas/**` y `/api/indexer/**` para cubrir subrutas y peticiones de detalle.
+
+El Indexer no expone una pantalla frontend ni una API REST de búsqueda: su responsabilidad es el flujo de eventos. Más información en `docs/INTEGRACION_INDEXER_JOKER.md`.
+
+## Comprobación y límites
+
+```powershell
+npm run test:smoke
+npx ng test --watch=false --include=src/app/core/academia-api.service.spec.ts
+npm run build
+.\infra\VERIFICAR.ps1
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Las pruebas CI han compilado Angular y los adaptadores Java de Catálogo, Matrículas y Pagos, validado los roles de Keycloak e Indexer y proyectado filas de PostgreSQL a Elasticsearch. **Esto no sustituye una validación real de acceso por navegador y el flujo completo de matrícula-pago-Kafka en el PC del estudiante.**
 
-```bash
-ng generate --help
-```
+Por completar en los microservicios antes de un despliegue público: integración de adaptadores en repositorios originales mediante PR, Saga de matrículas, pagos reales, correos/WhatsApp, reserva de cupos, imágenes persistentes en backend, configuración HTTPS, autorización de extremo a extremo y E2E completo. Los scripts usan infraestructura local de desarrollo, no son un despliegue de producción.
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Para detener Docker conservando volúmenes: `./infra/DETENER_INFRA.ps1`. No ejecutes `docker compose down -v` en un entorno compartido.

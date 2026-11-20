@@ -1,22 +1,43 @@
-<div class="page-login">
-  <div class="panel">
-    <div class="brand">
-      <h1>MyAcademy</h1>
-      <p class="tag">Premium learning platform</p>
-    </div>
-
-    <form (submit)="submit($event)">
-      <label>Usuario</label>
-      <input type="text" [(ngModel)]="username" name="username" placeholder="tu.usuario" />
-
-      <label>Contraseña</label>
-      <input type="password" [(ngModel)]="password" name="password" placeholder="********" />
-
-      <div class="actions">
-        <button type="submit">Entrar</button>
+<section class="shell access-page">
+  <div class="access-panel">
+    <span class="section-overline">MYACADEMY · ACCESO SEGURO</span>
+    <h1>{{ denied ? 'Acceso restringido' : 'Iniciar sesión' }}</h1>
+    @if(denied) {
+      <p class="error-banner" role="alert">Tu cuenta no tiene el rol requerido. Ingresa con una cuenta autorizada o solicita permisos al administrador.</p>
+    }
+    @if(auth.autenticado()){
+      <p>Sesión activa: <strong>{{ auth.usuario() }}</strong></p>
+      <p>Permisos: {{ auth.roles().join(', ') || 'Sin rol asignado' }}</p>
+      @if(!esAdmin() && !esEstudiante()){
+        <p role="alert" class="error-banner">Esta cuenta está autenticada, pero no tiene el rol ESTUDIANTE ni ADMIN de MyAcademy. Solicita al administrador del realm que asigne el permiso correspondiente.</p>
+      }
+      <div class="button-row">
+        @if(esAdmin()){<a class="btn-primary" routerLink="/gestion">Ir al panel administrativo</a>}
+        @if(esEstudiante()){<a class="btn-primary" routerLink="/mi-espacio">Ir a mi espacio de estudiante</a>}
+        <button class="btn-outline" (click)="salir()">Cerrar sesión</button>
       </div>
-
-      <p class="muted">Inicia sesión con Keycloak en producción. Este es un login local de ejemplo.</p>
-    </form>
+    } @else {
+      <p>Selecciona cómo ingresar. Keycloak verifica tu identidad y los permisos de la cuenta.</p>
+      <div class="access-roles">
+        <div class="access-role">
+          <span class="role-emoji" aria-hidden="true">🎓</span>
+          <h2>Estudiante</h2>
+          <p>Explora cursos, revisa horarios y administra tus solicitudes de matrícula.</p>
+          <button class="btn-primary" [disabled]="procesando()" (click)="entrar('ESTUDIANTE')">Iniciar sesión como estudiante ↗</button>
+        </div>
+        <div class="access-role">
+          <span class="role-emoji" aria-hidden="true">⚙</span>
+          <h2>Administrador</h2>
+          <p>Gestiona cursos, categorías, sedes, horarios y registros académicos.</p>
+          <button class="btn-outline" [disabled]="procesando()" (click)="entrar('ADMIN')">Iniciar sesión como administrador ↗</button>
+        </div>
+      </div>
+      @if(auth.estado()==='sin-conexion' || auth.estado()==='no-configurado'){
+        <p class="error-banner" role="alert">El servidor de identidad no está disponible. Verifica Keycloak en <code>localhost:8180</code>. {{ auth.error() }}</p>
+      }
+      <p class="access-help">La opción seleccionada no crea ni concede permisos. El rol debe estar asignado en Keycloak.</p>
+      <a class="text-link" routerLink="/catalogo">← Explorar catálogo sin iniciar sesión</a>
+    }
+    @if(mensaje()){<p class="error-banner" role="alert">{{ mensaje() }}</p>}
   </div>
-</div>
+</section>

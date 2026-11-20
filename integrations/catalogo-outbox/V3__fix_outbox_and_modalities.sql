@@ -1,0 +1,7 @@
+ALTER TABLE courses DROP CONSTRAINT IF EXISTS ck_courses_modality;
+ALTER TABLE courses ADD CONSTRAINT ck_courses_modality CHECK (modality IN ('ONLINE','IN_PERSON','PRESENTIAL','HYBRID'));
+ALTER TABLE outbox_events ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'PENDING';
+ALTER TABLE outbox_events ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE outbox_events ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
+ALTER TABLE outbox_events ADD COLUMN IF NOT EXISTS last_error TEXT;
+CREATE INDEX IF NOT EXISTS idx_outbox_pending ON outbox_events(status,timestamp);

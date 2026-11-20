@@ -1,14 +1,36 @@
-<header class="app-header">
-	<div class="brand">
-		<h1>MyAcademy</h1>
-		<div class="tag">Plataforma de Cursos - Premium</div>
-	</div>
-	<nav class="nav-links">
-		<a routerLink="/catalogo">Catálogo</a>
-		<a routerLink="/matricula/1">Matricular</a>
-		<a routerLink="/confirmacion">Confirmación</a>
-		<a routerLink="/login">Login</a>
-	</nav>
+<header class="site-header">
+  <div class="shell nav-shell">
+    <a class="site-logo" routerLink="/inicio" aria-label="Ir al inicio de MyAcademy"><span class="logo-icon">M<span>✦</span></span><span>my<span class="logo-emphasis">academy</span></span></a>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a routerLink="/inicio" routerLinkActive="active">Inicio</a>
+      <a routerLink="/catalogo" routerLinkActive="active">Cursos</a>
+      @if(esEstudiante()){<a routerLink="/mi-espacio" routerLinkActive="active">Mi espacio</a>}
+      @if(puedeAdministrar()){
+      <a routerLink="/gestion" routerLinkActive="active">Panel</a>
+      <a routerLink="/pagos" routerLinkActive="active">Pagos</a>
+      <div class="nav-dropdown">
+        <button type="button" class="nav-menu-toggle" aria-haspopup="true" aria-controls="menu-gestion"
+          [attr.aria-expanded]="menuAbierto()" (click)="menuAbierto.set(!menuAbierto())">Gestión <span aria-hidden="true">▾</span></button>
+        <div class="nav-dropdown-items" id="menu-gestion" [class.menu-open]="menuAbierto()">
+          <a routerLink="/gestion/cursos" (click)="menuAbierto.set(false)">Administrar cursos</a>
+          <a routerLink="/gestion/categorias" (click)="menuAbierto.set(false)">Categorías</a>
+          <a routerLink="/gestion/estudiantes" (click)="menuAbierto.set(false)">Estudiantes</a>
+          <a routerLink="/gestion/integraciones" (click)="menuAbierto.set(false)">Conexiones API</a>
+        </div>
+      </div>
+      }
+    </nav>
+    <div class="header-actions">@if(auth.autenticado()){
+      <a class="nav-cta" routerLink="/login">{{ auth.usuario() || 'Mi cuenta' }} <span>✓</span></a>
+    } @else {
+      <a class="nav-cta" routerLink="/login">Iniciar sesión <span>↗</span></a>
+    }</div>
+  </div>
 </header>
-
-<router-outlet></router-outlet>
+<main><router-outlet /></main>
+<footer class="site-footer"><div class="shell footer-main">
+  <div><a class="site-logo" routerLink="/inicio"><span class="logo-icon">M<span>✦</span></span><span>my<span class="logo-emphasis">academy</span></span></a><p>Un espacio para descubrir, aprender y construir nuevas oportunidades.</p></div>
+  <div><h3>Aprender</h3><a routerLink="/catalogo">Todos los cursos</a>@if(esEstudiante()){<a routerLink="/mi-espacio">Mi espacio</a>}</div>
+  <div><h3>MyAcademy</h3>@if(puedeAdministrar()){<a routerLink="/gestion">Administración</a><a routerLink="/gestion/cursos">Gestión de cursos</a><a routerLink="/gestion/integraciones">Estado de servicios</a>} @else {<a routerLink="/login">Acceder a tu cuenta</a><a routerLink="/catalogo">Explorar programas</a>}</div>
+  <div><h3>Acerca de</h3><p>Proyecto académico de Desarrollo Web Integrado. Consulta la disponibilidad y condiciones de cada curso antes de matricularte.</p></div>
+</div><div class="shell footer-bottom"><span>© 2026 MyAcademy · Proyecto académico</span><span>Diseñado para aprender, creado para crecer.</span></div></footer>

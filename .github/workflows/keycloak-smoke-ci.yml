@@ -1,0 +1,42 @@
+name: Keycloak integration smoke (Docker)
+on:
+  push:
+    branches: [feat/dwi-frontend-gonzalo]
+    paths:
+      - infra/compose.yml
+      - infra/keycloak/**
+      - .github/workflows/keycloak-smoke-ci.yml
+  workflow_dispatch:
+
+jobs:
+  keycloak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Keycloak with local PostgreSQL
+        run: |
+          cp infra/.env.example infra/.env
+          docker compose --env-file infra/.env -f infra/compose.yml up -d keycloak-db keycloak
+      - name: Wait for OIDC discovery and imported realm
+        run: |
+          set -eu
+          for i in $(seq 1 80); do
+            if curl -fsS --max-time 4 http://localhost:8180/realms/myacademy/.well-known/openid-configuration > /tmp/oidc.json; then
+              python3 - <<'PY'
+          import json
+          c=json.load(open('/tmp/oidc.json'))
+          assert c['issuer']=='http://localhost:8180/realms/myacademy', c['issuer']
+          print('Keycloak OIDC issuer disponible:',c['issuer'])
+          PY
+              exit 0
+            fi
+            sleep 4
+          done
+          echo "Keycloak no respondió dentro de la comprobación"
+          docker compose --env-file infra/.env -f infra/compose.yml logs --no-color --tail=120 keycloak
+          exit 1
+      - name: Cleanup ephemeral containers
+        if: always()
+        run: |
+          docker compose --env-file infra/.env -f infra/compose.yml down -v || true

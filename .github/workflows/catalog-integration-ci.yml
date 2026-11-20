@@ -1,0 +1,108 @@
+name: Integración real Catálogo y Pagos
+on:
+  push:
+    branches: [feat/dwi-frontend-gonzalo]
+    paths:
+      - .github/workflows/catalog-integration-ci.yml
+  workflow_dispatch:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Clonar repositorios de los servicios
+        run: |
+          git clone --depth 1 https://github.com/Grupito-Web-Integrado/Catalogo-Cursos-Publico-1A.git ./tmp-catalogo
+          git clone --depth 1 https://github.com/Grupito-Web-Integrado/Estados_de_Pago.git ./tmp-pagos
+      - name: Levantar PostgreSQL, Redis y Elasticsearch
+        run: |
+          cp infra/.env.example infra/.env
+          docker compose --env-file infra/.env -f infra/compose.yml up -d catalogo-db redis elasticsearch
+      - name: Esperar bases y buscador
+        run: |
+          set -e
+          for i in $(seq 1 45); do
+            if docker compose --env-file infra/.env -f infra/compose.yml exec -T catalogo-db pg_isready -U admin -d catalog_db && curl -fsS --max-time 4 http://localhost:9200 >/dev/null; then
+              echo 'PostgreSQL y Elasticsearch responden'
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+      - name: Crear índices de Elasticsearch antes de las consultas
+        run: |
+          set -e
+          for mapping in infra/elastic-indices/*.json; do
+            index=$(basename "$mapping" .json)
+            code=$(curl -s -o /dev/null -w '%{http_code}' -I "http://localhost:9200/$index")
+            if [ "$code" = "404" ]; then
+              curl -fsS -X PUT "http://localhost:9200/$index" -H 'Content-Type: application/json' --data-binary @"$mapping"
+            elif [ "$code" != "200" ]; then
+              echo "Error verificando índice $index: $code"
+              exit 1
+            fi
+          done
+      - name: Compilar aplicaciones Java sin tests
+        run: |
+          chmod +x tmp-catalogo/mvnw tmp-pagos/mvnw
+          (cd tmp-catalogo && ./mvnw -B -DskipTests package)
+          (cd tmp-pagos && ./mvnw -B -DskipTests package)
+      - name: Arrancar Catálogo y Pagos reales
+        run: |
+          export SPRING_R2DBC_URL='r2dbc:postgresql://localhost:5435/catalog_db'
+          export SPRING_R2DBC_USERNAME='admin'
+          export SPRING_R2DBC_PASSWORD='REEMPLAZAR_CON_CLAVE_UNICA'
+          export SPRING_FLYWAY_URL='jdbc:postgresql://localhost:5435/catalog_db'
+          export SPRING_FLYWAY_USER='admin'
+          export SPRING_FLYWAY_PASSWORD='REEMPLAZAR_CON_CLAVE_UNICA'
+          export SPRING_ELASTICSEARCH_URIS='http://localhost:9200'
+          export SPRING_DATA_REDIS_HOST='localhost'
+          export SERVER_PORT=8080
+          java -jar tmp-catalogo/target/Catalogo-Cursos-0.0.1-SNAPSHOT.jar > /tmp/catalogo.log 2>&1 &
+          echo $! > /tmp/catalogo.pid
+          SERVER_PORT=8081 java -jar tmp-pagos/target/Servicio-Pago-0.0.1-SNAPSHOT.jar > /tmp/pagos.log 2>&1 &
+          echo $! > /tmp/pagos.pid
+      - name: Probar endpoints HTTP reales
+        run: |
+          set -e
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 4 http://localhost:8080/actuator/health >/dev/null &&
+               curl -fsS --max-time 4 http://localhost:8081/api/pagos >/dev/null; then
+               echo "Ambos servicios están disponibles"
+               break
+            fi
+            sleep 5
+          done
+          echo 'GET /api/v1/course-categories/active'
+          curl -fsS --max-time 15 'http://localhost:8080/api/v1/course-categories/active?page=0&size=10'
+          echo
+          echo 'GET /api/v1/courses/published'
+          curl -fsS --max-time 15 'http://localhost:8080/api/v1/courses/published?page=0&size=10'
+          echo
+          echo 'GET /api/pagos'
+          curl -fsS --max-time 15 'http://localhost:8081/api/pagos'
+      - name: Mostrar errores de los servicios
+        if: failure()
+        run: |
+          echo '===== CATÁLOGO (últimas 150 líneas) ====='
+          tail -n 150 /tmp/catalogo.log 2>/dev/null || true
+          echo '===== PAGOS (últimas 80 líneas) ====='
+          tail -n 80 /tmp/pagos.log 2>/dev/null || true
+      - name: Adjuntar diagnósticos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-api-integration
+          path: |
+            /tmp/catalogo.log
+            /tmp/pagos.log
+          if-no-files-found: ignore
+      - name: Detener infraestructura temporal y borrar datos de CI
+        if: always()
+        run: docker compose --env-file infra/.env -f infra/compose.yml down -v || true

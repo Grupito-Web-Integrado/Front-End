@@ -1,13 +1,14 @@
 {
   "name": "frontend-plataforma-cursos",
-  "version": "0.0.0",
+  "version": "0.6.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:frontend-plataforma-cursos": "node dist/frontend-plataforma-cursos/server/server.mjs"
+    "serve:ssr:frontend-plataforma-cursos": "node dist/frontend-plataforma-cursos/server/server.mjs",
+    "test:smoke": "node --test tests/smoke.test.mjs"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
