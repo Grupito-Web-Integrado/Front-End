@@ -89,9 +89,9 @@ jobs:
           sleep 2
       - name: Levantar Angular conectado al Keycloak real
         run: |
-          npm start -- --host 127.0.0.1 >/tmp/myacademy-angular.log 2>&1 &
+          npm start -- --host localhost >/tmp/myacademy-angular.log 2>&1 &
           for i in $(seq 1 90); do
-            if curl -fsS --max-time 3 http://127.0.0.1:4200/login >/dev/null; then exit 0; fi
+            if curl -fsS --max-time 3 http://localhost:4200/login >/dev/null; then exit 0; fi
             sleep 2
           done
           tail -100 /tmp/myacademy-angular.log
