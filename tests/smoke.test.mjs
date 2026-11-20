@@ -130,3 +130,45 @@ test('Angular Vite proxies requests deeply into each backend', () => {
   }
   assert.equal(proxy['/api/indexer/**'].target,'http://127.0.0.1:8084');
 });
+
+test('Los dos roles tienen portal independiente y el menú móvil abre gestión', () => {
+  const routes=read('src/app/app.routes.ts');
+  const shell=read('src/app/app.html');
+  const student=read('src/app/features/portal-estudiante/portal-estudiante.ts');
+  const admin=read('src/app/features/portal-admin/portal-admin.ts');
+  assert.ok(routes.includes("path: 'mi-espacio'"));
+  assert.ok(routes.includes("path: 'gestion', component: PortalAdmin"));
+  assert.ok(routes.includes("rol: 'ESTUDIANTE'"));
+  assert.ok(routes.includes("rol: 'ADMIN'"));
+  assert.ok(student.includes("this.api.listarMatriculas()"));
+  assert.ok(admin.includes("this.api.listarMatriculasAdmin()"));
+  assert.ok(shell.includes('nav-menu-toggle'));
+  assert.ok(shell.includes('[attr.aria-expanded]'));
+});
+
+test('La confirmación de matrícula depende del comprobante real y evita doble envío', () => {
+  const panel=read('src/app/features/academia-panel/academia-panel.ts');
+  assert.ok(panel.includes('this.api.registrarMatricula('));
+  assert.ok(panel.includes('if(this.cargando())return;'));
+  assert.ok(panel.includes("state:{solicitud:{id:respuesta.id,estado:respuesta.estado}}"));
+  assert.ok(panel.includes('@if(matriculaConfirmada();as solicitud)'));
+  assert.ok(panel.includes('No existe un comprobante'));
+});
+
+test('El catálogo filtra antes de paginar y no permite matrícula sin cupos', () => {
+  const catalog=read('src/app/features/catalogo-avanzado/catalogo-avanzado.ts');
+  assert.ok(catalog.includes('readonly cursosFiltrados = computed('));
+  assert.ok(catalog.includes('readonly totalPaginas = computed('));
+  assert.ok(catalog.includes('this.cursosFiltrados().slice('));
+  assert.ok(catalog.includes('this.categorias().slice(0,6)'));
+  assert.ok(catalog.includes("if(curso.availableSlots>0)"));
+  assert.ok(catalog.includes('this.api.enriquecerCursos(visibles)'));
+});
+
+test('La versión final puede mostrar solo el frontend sin inventar datos', () => {
+  const launcher=read('VER_FRONTEND.bat');
+  const app=read('src/app/core/academia-demo.service.ts');
+  assert.ok(launcher.includes('ABRIR_FRONTEND.ps1'));
+  assert.ok(!app.includes('localStorage.setItem('));
+  assert.ok(app.includes("signal<'demo'|'api'>('api')"));
+});

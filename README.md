@@ -1,3 +1,10 @@
+## Entrega frontend · 20 de noviembre de 2026
+
+La documentación de cierre se encuentra en [Casos de uso, pruebas y arranque](docs/ENTREGA_FRONTEND_20-11-2026.md).
+
+Para **ver el frontend** sin Docker ni datos de ejemplo, ejecuta `VER_FRONTEND.bat`. Para **levantar los microservicios reales**, primero revisa `infra/DIAGNOSTICO_GENERAL.ps1` y después usa `ABRIR_MYACADEMY.bat` con Docker Desktop funcionando. El acceso es por Keycloak y roles `ESTUDIANTE` y `ADMIN`.
+
+---
 # MyAcademy · Frontend Angular conectado a microservicios
 
 Proyecto académico de Desarrollo Web Integrado (UTP). Código en rama `feat/dwi-frontend-gonzalo`, pendiente de revisión en Pull Request hacia `feat/premium-frontend`.
