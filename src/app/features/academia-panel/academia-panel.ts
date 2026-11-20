@@ -248,13 +248,13 @@ export class AcademiaPanel implements OnInit {
   private ok(msg:string):void{this.mensaje.set(msg);this.error.set('');}
   cargarCursos():void{
     // Todos los datos proceden del backend; sin almacenamiento local ficticio.
-    this.api.buscarCriterios({},0,100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:p=>this.cursosApi.set(p.content),error:e=>this.fallo(e)
+    this.api.todosCursosAdministracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next:items=>this.cursosApi.set(items),error:e=>this.fallo(e)
     });
   }
   cargarCategorias():void{
     // Todos los datos proceden del backend; sin almacenamiento local ficticio.
-    this.api.todasCategorias(0,100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:p=>this.categoriasApi.set(p.content),error:e=>this.fallo(e)});
+    this.api.todasCategoriasCompletas().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:items=>this.categoriasApi.set(items),error:e=>this.fallo(e)});
   }
   registrarMatricula():void {
     if(this.cargando())return; // Evita peticiones duplicadas por doble clic.

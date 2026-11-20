@@ -30,6 +30,27 @@ describe('AcademiaApiService - contratos de microservicios', () => {
     expect(actual).toEqual(['Programación','Datos']);
   });
 
+  it('consulta más de cien cursos administrativos, incluyendo estados DRAFT', () => {
+    const primer=[{id:'1',status:'DRAFT'}];
+    let ids:string[]=[];
+    api.todosCursosAdministracion().subscribe(c=>ids=c.map(x=>x.id));
+    http.expectOne('/api/v1/courses/search-criteria?page=0&size=100')
+      .flush({content:primer,totalElements:101,totalPages:2,page:0,size:100});
+    http.expectOne('/api/v1/courses/search-criteria?page=1&size=100')
+      .flush({content:[{id:'2',status:'PUBLISHED'}],totalElements:101,totalPages:2,page:1,size:100});
+    expect(ids).toEqual(['1','2']);
+  });
+
+  it('carga todas las categorías, incluyendo inactivas, para administración', () => {
+    let ids:string[]=[];
+    api.todasCategoriasCompletas().subscribe(c=>ids=c.map(x=>x.id));
+    http.expectOne('/api/v1/course-categories/all?page=0&size=100')
+      .flush({content:[{id:'cat-1',status:'ACTIVE'}],totalElements:101,totalPages:2,page:0,size:100});
+    http.expectOne('/api/v1/course-categories/all?page=1&size=100')
+      .flush({content:[{id:'cat-2',status:'INACTIVE'}],totalElements:101,totalPages:2,page:1,size:100});
+    expect(ids).toEqual(['cat-1','cat-2']);
+  });
+
   it('enriquece resultados de búsqueda con su categoría real desde CourseDto', () => {
     const resumen = {
       id:'11111111-1111-4111-8111-111111111111',code:'JAVA-01',name:'Java',

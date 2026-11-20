@@ -167,7 +167,7 @@ export class CursoAdmin implements OnInit {
       next:c=>{this.asignar(c);this.cargando.set(false);},
       error:e=>{this.errorApi(e);this.cargando.set(false);}
     });
-    this.api.categoriasActivasCompletas().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.api.todasCategoriasCompletas().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next:cats=>this.categorias.set(cats),error:()=>{}
     });
   }
