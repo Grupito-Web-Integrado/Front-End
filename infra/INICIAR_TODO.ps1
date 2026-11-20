@@ -43,7 +43,7 @@ for($n=0;$n -lt 70;$n++){
 if(-not $ready){throw 'Keycloak no inició. Revisa logs Docker de keycloak.'}
 Write-Host 'Abriendo los servicios Maven. Revisa cada terminal para confirmar el arranque.' -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot 'ABRIR_APIS.ps1') -IncluirIndexer
-& (Join-Path $PSScriptRoot 'ABRIR_DEMO.ps1')
+& (Join-Path $PSScriptRoot 'ABRIR_FRONTEND.ps1')
 Write-Host 'Angular disponible, pero los servicios requieren comprobación adicional:' -ForegroundColor Yellow
 Write-Host 'Ejecuta .\infra\VERIFICAR.ps1 y revisa los logs Java.'
 Write-Host 'Acceso: http://localhost:4200/inicio'
