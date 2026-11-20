@@ -172,3 +172,13 @@ test('La versión final puede mostrar solo el frontend sin inventar datos', () =
   assert.ok(!app.includes('localStorage.setItem('));
   assert.ok(app.includes("signal<'demo'|'api'>('api')"));
 });
+
+test('Rutas privadas usan renderizado client para no interceptar PKCE en Angular SSR', () => {
+  const ssr=read('src/app/app.routes.server.ts');
+  const guard=read('src/app/core/identity.guard.ts');
+  for (const path of ["path: 'login'","path: 'mi-espacio'","path: 'mis-matriculas'","path: 'gestion'","path: 'gestion/cursos'","path: 'matricula/:idCurso'","path: 'pagos'"]) {
+    assert.ok(ssr.includes(path), 'SSR client route faltante: '+path);
+  }
+  assert.ok(ssr.includes("path: '**', renderMode: RenderMode.Server"));
+  assert.ok(guard.includes("if(!isPlatformBrowser(inject(PLATFORM_ID)))return true"));
+});
