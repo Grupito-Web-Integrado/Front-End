@@ -27,9 +27,11 @@ try {
   await p1.getByRole('heading',{name:'Tu espacio de aprendizaje'}).waitFor({timeout:30000});
   assert.match(await p1.locator('body').innerText(),/e2e_student/);
   // Un estudiante NO puede entrar al área ADMIN por alterar el URL.
+  // Una navegación de documento completo pierde el JWT (guardado solo en memoria).
+  // El servidor debe negar el área admin: login o acceso-denegado, nunca panel.
   await p1.goto(origin+'/gestion');
-  await p1.waitForURL(/localhost:4200\/acceso-denegado/, {timeout:30000});
-  assert.match(await p1.locator('body').innerText(),/Acceso restringido/);
+  await p1.waitForURL(/localhost:4200\/(?:acceso-denegado|login)/, {timeout:30000});
+  assert.equal(await p1.getByRole('heading',{name:'Panel de control'}).count(),0);
   console.log('PASS: Login ESTUDIANTE con PKCE, portal real y protección ADMIN');
   await student.close();
 
@@ -48,7 +50,9 @@ try {
   await p2.waitForURL(/localhost:4200\/gestion/, {timeout:20000,waitUntil:'domcontentloaded'});
   await p2.getByRole('heading',{name:'Panel de control'}).waitFor({timeout:30000});
   assert.match(await p2.locator('body').innerText(),/e2e_admin/);
-  await p2.goto(origin+'/gestion/cursos');
+  // Usar RouterLink (navegación SPA) para mantener el token en memoria.
+  await p2.locator('a.portal-action[href="/gestion/cursos"]').click();
+  await p2.waitForURL(/localhost:4200\/gestion\/cursos/, {timeout:30000});
   await p2.getByRole('heading',{name:'Administrar cursos'}).waitFor({timeout:30000});
   console.log('PASS: Login ADMIN con PKCE, panel real y acceso de gestión');
   await admin.close();
