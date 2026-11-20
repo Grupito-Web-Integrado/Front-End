@@ -152,7 +152,12 @@ import { portadaCurso } from '../../core/course-cover';
               }
             </section>
           </div>
-          <aside class="detail-buy"><div class="detail-visual"><img [src]="portadaCurso(curso)" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div><a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a><p>La matrícula requiere una cuenta de estudiante y disponibilidad del servicio.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
+          <aside class="detail-buy"><div class="detail-visual"><img [src]="portadaCurso(curso)" [alt]="'Portada ilustrativa del curso '+curso.name" loading="lazy"></div><div class="detail-price"><small>Inversión</small><strong>S/ {{ curso.price | number:'1.2-2' }}</strong></div>@if(curso.availableSlots>0) {
+              <a class="btn-primary btn-block" [routerLink]="['/matricula',curso.id]">Matricularme ahora ↗</a>
+            } @else {
+              <button class="btn-outline btn-block" disabled type="button" aria-label="Curso sin cupos disponibles">Sin cupos disponibles</button>
+            }
+            <p>La matrícula requiere una cuenta de estudiante y disponibilidad del servicio.</p><a class="text-link" routerLink="/catalogo">← Seguir explorando</a></aside>
         </div>
       }
     </section>
