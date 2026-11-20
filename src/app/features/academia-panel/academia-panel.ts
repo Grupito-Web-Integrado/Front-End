@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
 import { from, concatMap, toArray, forkJoin, map, catchError, of } from 'rxjs';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -89,8 +89,12 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
         <button class="btn-primary" (click)="crearCurso()">Guardar curso</button>
       </div>
       <div class="table-card"><div class="table-heading"><h2>Cursos registrados</h2><button class="btn-outline" (click)="cargarCursos()">Actualizar</button></div><div class="table-scroll"><table><thead><tr><th>Curso</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
-      @for(c of cursosVisibles();track c.id){<tr><td><strong>{{c.name}}</strong><small>{{c.code}}</small></td><td>S/ {{c.price|number:'1.2-2'}}</td><td><span class="status-pill">{{c.status}}</span></td><td><a class="table-link" [routerLink]="['/gestion/cursos',c.id]">Editar curso, horarios y sedes</a>@if(c.status==='PUBLISHED'){<a class="table-link" [routerLink]="['/curso',c.id]">Ver como estudiante</a>}</td></tr>}
-      </tbody></table></div></div>
+      @for(c of cursosPaginados();track c.id){<tr><td><strong>{{c.name}}</strong><small>{{c.code}}</small></td><td>S/ {{c.price|number:'1.2-2'}}</td><td><span class="status-pill">{{c.status}}</span></td><td><a class="table-link" [routerLink]="['/gestion/cursos',c.id]">Editar curso, horarios y sedes</a>@if(c.status==='PUBLISHED'){<a class="table-link" [routerLink]="['/curso',c.id]">Ver como estudiante</a>}</td></tr>}
+      </tbody></table></div>
+        <div class="pagination"><button type="button" [disabled]="paginaCursos()===0" (click)="paginaCursos.update(p=>p-1)">Anterior</button>
+          <span>Página {{paginaCursos()+1}} de {{paginasCursos()}} · {{cursosVisibles().length}} cursos</span>
+          <button type="button" [disabled]="paginaCursos()+1>=paginasCursos()" (click)="paginaCursos.update(p=>p+1)">Siguiente</button></div>
+      </div>
       @if(cursoEditando();as c){<div class="form-card"><h2>Editar: {{c.name}}</h2><p>La API actual expone operaciones PATCH separadas para nombre, descripción y precio.</p>
         <div class="form-grid">
           <label class="form-field"><span>Nuevo nombre</span><input name="editName" [(ngModel)]="editarNombre"></label>
@@ -102,8 +106,12 @@ import { Categoria, Curso, Horario, Sede, Pago, DiagnosticoApi, Matricula } from
     @if(vista==='categorias'){
       <div class="form-card compact-form"><h2>Nueva categoría</h2><div class="form-grid"><label class="form-field"><span>Nombre *</span><input name="catName" [(ngModel)]="nuevaCategoria.name"></label><label class="form-field"><span>Descripción</span><input name="catDescription" [(ngModel)]="nuevaCategoria.description"></label></div><button class="btn-primary" (click)="crearCategoria()">Crear categoría</button></div>
       <div class="table-card"><div class="table-heading"><h2>Categorías</h2><button class="btn-outline" (click)="cargarCategorias()">Actualizar</button></div><div class="table-scroll"><table><thead><tr><th>Nombre</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
-      @for(c of categoriasVisibles();track c.id){<tr><td><strong>{{c.name}}</strong></td><td>{{c.description||'—'}}</td><td>{{c.status}}</td><td><button class="table-link" (click)="seleccionarCategoria(c)">Editar</button><button class="table-link" (click)="alternarCategoria(c)">{{c.status==='ACTIVE'?'Desactivar':'Activar'}}</button></td></tr>}
-      </tbody></table></div></div>
+      @for(c of categoriasPaginadas();track c.id){<tr><td><strong>{{c.name}}</strong></td><td>{{c.description||'—'}}</td><td>{{c.status}}</td><td><button class="table-link" (click)="seleccionarCategoria(c)">Editar</button><button class="table-link" (click)="alternarCategoria(c)">{{c.status==='ACTIVE'?'Desactivar':'Activar'}}</button></td></tr>}
+      </tbody></table></div>
+        <div class="pagination"><button type="button" [disabled]="paginaCategorias()===0" (click)="paginaCategorias.update(p=>p-1)">Anterior</button>
+          <span>Página {{paginaCategorias()+1}} de {{paginasCategorias()}} · {{categoriasVisibles().length}} categorías</span>
+          <button type="button" [disabled]="paginaCategorias()+1>=paginasCategorias()" (click)="paginaCategorias.update(p=>p+1)">Siguiente</button></div>
+      </div>
       @if(categoriaEditando();as c){<div class="form-card compact-form"><h2>Editar: {{c.name}}</h2><div class="form-grid"><label class="form-field"><span>Nombre</span><input name="renameCategory" [(ngModel)]="editarNombre"></label><label class="form-field"><span>Descripción</span><input name="recategory" [(ngModel)]="editarDescripcion"></label></div><button class="btn-primary" (click)="guardarCategoria()">Guardar cambios</button></div>}
     }
     @if(vista==='horarios'||vista==='sedes'){
@@ -192,6 +200,13 @@ export class AcademiaPanel implements OnInit {
   readonly vista: string=this.route.snapshot.data['vista']||'matriculas';
   readonly error=signal(''); readonly mensaje=signal(''); readonly cargando=signal(false);
   readonly cursosApi=signal<Curso[]>([]); readonly categoriasApi=signal<Categoria[]>([]);
+  readonly paginaCursos=signal(0);
+  readonly paginaCategorias=signal(0);
+  readonly tamanoPagina=15;
+  readonly paginasCursos=computed(()=>Math.max(1,Math.ceil(this.cursosApi().length / this.tamanoPagina)));
+  readonly paginasCategorias=computed(()=>Math.max(1,Math.ceil(this.categoriasApi().length / this.tamanoPagina)));
+  readonly cursosPaginados=computed(()=>this.cursosApi().slice(this.paginaCursos()*this.tamanoPagina,(this.paginaCursos()+1)*this.tamanoPagina));
+  readonly categoriasPaginadas=computed(()=>this.categoriasApi().slice(this.paginaCategorias()*this.tamanoPagina,(this.paginaCategorias()+1)*this.tamanoPagina));
   readonly matriculasApi=signal<Matricula[]>([]);
   readonly matriculaConfirmada=signal<{id:string;estado:string}|null>(null);
   readonly pagosApi=signal<Pago[]>([]); readonly horarios=signal<Horario[]>([]); readonly sedes=signal<Sede[]>([]);
@@ -249,12 +264,12 @@ export class AcademiaPanel implements OnInit {
   cargarCursos():void{
     // Todos los datos proceden del backend; sin almacenamiento local ficticio.
     this.api.todosCursosAdministracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next:items=>this.cursosApi.set(items),error:e=>this.fallo(e)
+      next:items=>{this.cursosApi.set(items);this.paginaCursos.set(0);},error:e=>this.fallo(e)
     });
   }
   cargarCategorias():void{
     // Todos los datos proceden del backend; sin almacenamiento local ficticio.
-    this.api.todasCategoriasCompletas().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:items=>this.categoriasApi.set(items),error:e=>this.fallo(e)});
+    this.api.todasCategoriasCompletas().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:items=>{this.categoriasApi.set(items);this.paginaCategorias.set(0);},error:e=>this.fallo(e)});
   }
   registrarMatricula():void {
     if(this.cargando())return; // Evita peticiones duplicadas por doble clic.
