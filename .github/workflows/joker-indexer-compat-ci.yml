@@ -44,5 +44,4 @@ jobs:
       - name: Compilar Indexer de Joker SIN modificar su fuente
         run: |
           cd joker-indexer
-          chmod +x mvnw
-          ./mvnw -B -DskipTests package
+          mvn -B -DskipTests package
