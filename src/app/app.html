@@ -8,12 +8,14 @@
       @if(puedeAdministrar()){
       <a routerLink="/gestion" routerLinkActive="active">Panel</a>
       <a routerLink="/pagos" routerLinkActive="active">Pagos</a>
-      <div class="nav-dropdown"><span>Gestión ▾</span>
-        <div class="nav-dropdown-items">
-          <a routerLink="/gestion/cursos">Administrar cursos</a>
-          <a routerLink="/gestion/categorias">Categorías</a>
-          <a routerLink="/gestion/estudiantes">Estudiantes</a>
-          <a routerLink="/gestion/integraciones">Conexiones API</a>
+      <div class="nav-dropdown">
+        <button type="button" class="nav-menu-toggle" aria-haspopup="true" aria-controls="menu-gestion"
+          [attr.aria-expanded]="menuAbierto()" (click)="menuAbierto.set(!menuAbierto())">Gestión <span aria-hidden="true">▾</span></button>
+        <div class="nav-dropdown-items" id="menu-gestion" [class.menu-open]="menuAbierto()">
+          <a routerLink="/gestion/cursos" (click)="menuAbierto.set(false)">Administrar cursos</a>
+          <a routerLink="/gestion/categorias" (click)="menuAbierto.set(false)">Categorías</a>
+          <a routerLink="/gestion/estudiantes" (click)="menuAbierto.set(false)">Estudiantes</a>
+          <a routerLink="/gestion/integraciones" (click)="menuAbierto.set(false)">Conexiones API</a>
         </div>
       </div>
       }

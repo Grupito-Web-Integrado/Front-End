@@ -221,3 +221,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(max-width:950px){.admin-stats,.portal-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.student-summary,.admin-stats,.portal-actions{grid-template-columns:1fr}.student-stat{padding:18px}.portal-action{min-height:auto}.portal-filter{margin-left:16px}}
 @media(max-width:560px){.site-header .nav-cta{display:inline-flex;align-items:center;padding:10px 12px;font-size:12px}}
+
+/* Menú de gestión navegable por teclado y pantalla táctil */
+.nav-menu-toggle{border:0;background:transparent;color:inherit;font-weight:700;padding:0;display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:inherit}
+.nav-menu-toggle:hover,.nav-menu-toggle:focus-visible{color:#624ad4}
+.nav-dropdown-items.menu-open{display:flex}
+@media(max-width:800px){.nav-dropdown-items{right:auto;left:0;top:30px;min-width:180px;z-index:50}}
+@media(max-width:500px){.nav-dropdown-items{left:auto;right:0;max-width:min(80vw,240px)}}
