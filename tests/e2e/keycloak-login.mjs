@@ -1,4 +1,6 @@
-import { chromium } from 'playwright';
+import { createRequire } from 'node:module';
+const require = createRequire('/tmp/myacademy-e2e-tools/package.json');
+const { chromium } = require('playwright');
 import assert from 'node:assert/strict';
 
 const studentPassword = process.env.E2E_STUDENT_PASSWORD;
@@ -6,7 +8,7 @@ const adminPassword = process.env.E2E_ADMIN_PASSWORD;
 if (!studentPassword || !adminPassword) throw new Error('Missing temporary E2E credentials');
 
 const origin = 'http://localhost:4200';
-const browser = await chromium.launch({headless:true});
+const browser = await chromium.launch({channel:'chrome',headless:true});
 const trace = [];
 try {
   const student = await browser.newContext({viewport:{width:1365,height:900}});

@@ -60,8 +60,9 @@ jobs:
       - name: Instalar frontend y navegador de pruebas
         run: |
           npm ci
-          npm install --no-save --package-lock=false playwright
-          npx playwright install --with-deps chromium
+          # Aislar las dependencias E2E para evitar el fallo npm edgesOut del proyecto Angular.
+          npm install --prefix /tmp/myacademy-e2e-tools --no-audit --no-fund playwright
+          google-chrome --version
       - name: Servidores HTTP temporales para aislar los flujos de login
         run: |
           node - <<'NODE' >/tmp/myacademy-api.log 2>&1 &
